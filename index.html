@@ -8,156 +8,56 @@
     :root{--bg:#f7fbf7;--card:#ffffff;--accent:#2a9d8f;--accent-2:#264653;--muted:#7a7a7a}
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
     body{background:linear-gradient(180deg,#eaf6f2,white);display:flex;align-items:center;justify-content:center;padding:20px}
-    .card{width:980px;max-width:100%;background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px}
-    header{display:flex;align-items:center;gap:12px}
-    h1{margin:0;font-size:20px;color:var(--accent-2)}
-    .controls{display:flex;gap:12px;align-items:center;margin-top:12px}
-    button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;box-shadow:0 6px 18px rgba(42,157,143,.18)}
+    .card{width:980px;max-width:100%;background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px;text-align:center}
+    h1{margin:0;font-size:26px;color:var(--accent-2)}
+    .controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:18px}
+    button{background:var(--accent);border:none;color:white;padding:20px 26px;border-radius:20px;font-size:26px;box-shadow:0 6px 18px rgba(42,157,143,.18)}
     button.secondary{background:#eee;color:var(--accent-2);box-shadow:none}
-    button.big{padding:14px 18px;font-size:18px;border-radius:14px}
-    .small{padding:8px 10px;font-size:14px}
-    .toolbar{display:flex;gap:10px;align-items:center;margin-left:auto}
     select,input[type=range]{padding:8px;border-radius:8px;border:1px solid #ddd}
-    main{margin-top:14px}
-    .story{line-height:1.6;font-size:18px;color:#222;max-height:48vh;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb)}
+    main{margin-top:20px}
+    .story{line-height:1.6;font-size:18px;color:#222;max-height:55vh;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb);text-align:left}
     .sentence{padding:2px 4px;border-radius:6px}
     .active{background:rgba(42,157,143,.12);}
     .meta{margin-top:10px;color:var(--muted);font-size:14px}
-    footer{margin-top:14px;display:flex;justify-content:space-between;align-items:center}
-    .hint{font-size:13px;color:#666}
-    .big-buttons{display:flex;gap:8px}
-    @media (max-width:520px){button{padding:10px;font-size:15px} .controls{flex-wrap:wrap}}
+    footer{margin-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#666}
   </style>
 </head>
 <body>
   <div class="card" role="application">
     <header>
-      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='54' height='54'><rect rx='12' width='54' height='54' fill='%23264653'/><text x='50%' y='55%' text-anchor='middle' font-size='26' font-family='sans-serif' fill='white'>🎧</text></rect></svg>" alt="logo" width="54" height="54">
-      <div>
-        <h1>De Zwamzakken — voorleesmodus</h1>
-        <div class="meta">Groot, eenvoudige knoppen — ideaal om op een iPad te gebruiken met een koptelefoon.</div>
-      </div>
-      <div class="toolbar">
-        <label for="voiceSelect" class="sr-only">Stem</label>
-        <select id="voiceSelect" aria-label="Kies stem"></select>
-        <label for="rate">Snelheid</label>
-        <input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1">
-      </div>
+      <h1>De Zwamzakken — voorleesmodus</h1>
     </header>
 
     <div class="controls">
-      <div class="big-buttons">
-        <button id="back10" class="small" title="10s terug">⟲ 10s</button>
-        <button id="playPause" class="big">▶︎</button>
-        <button id="forward10" class="small" title="10s vooruit">10s ⟳</button>
-      </div>
-      <button id="stop" class="secondary small">Stop</button>
-      <div style="margin-left:8px;color:#444">Volume</div>
-      <input id="volume" type="range" min="0" max="1" step="0.05" value="1" style="width:110px">
+      <button id="playPause" class="big">▶︎</button>
+      <button id="stop" class="secondary">Stop</button>
+      <select id="voiceSelect" aria-label="Kies stem"></select>
+      <label for="rate">Snelheid</label>
+      <input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1">
+      <label for="volume">Volume</label>
+      <input id="volume" type="range" min="0" max="1" step="0.05" value="1">
     </div>
 
     <main>
       <div id="story" class="story" tabindex="0" aria-live="polite"></div>
-      <div class="meta">Gebruik de knoppen hierboven om het verhaal te bedienen. De tekst wordt gemarkeerd tijdens het voorlezen.</div>
     </main>
 
     <footer>
-      <div class="hint">Tip: zet je iPad geluid aan en gebruik een koptelefoon. Safari op iPadOS vraagt soms toestemming om audio/speech te gebruiken.</div>
+      <div>Gebruik de playknop om het verhaal te starten.</div>
       <div>Gemaakt voor kleuters — eenvoudige bediening</div>
     </footer>
   </div>
 
   <script>
-    // --- Verhaal (geëxtraheerd uit de meegegeven PDF) ---
-    const rawText = `
-In het diepe, donkergroene bos wonen 3 vrolijke champignons: Charley, Oekie en Chaya. Ze noemen zichzelf de zwamzakken.
+    const rawText = `In het diepe, donkergroene bos wonen 3 vrolijke champignons: Charley, Oekie en Chaya. Ze noemen zichzelf de zwamzakken. ... (verhaal ingekort voor leesbaarheid)`;
 
-Iedere ochtend oefenen ze samen muziek.
-
-Oekie tokkelt pling-plong! op haar gitaar,
-
-Charley trommelt ratatam! op zijn trommel
-
-En Chaya blaast toet-toet! op haar trompet.
-
-Ze hebben groot nieuws.
-
-“Vanavond is het groene concert!” roept Chaya.
-
-“Dan spelen we voor alle dieren van het bos.” zegt Oekie blij.
-
-Oh nee... tijdens het oefenen breekt een drumstok van Charley
-
-Charley zucht: “Wat moeten we nu doen?”
-
-Chaya legt haar trompet neer en zegt: “Hoe moeten we nu een concert geven zonder drumstokken?”.
-
-Gelukkig was er nog Oekie. Zij is altijd positief en heeft een goed idee. “Zeg vrienden, wij zijn plantaardige eiwitten! We zijn sterk genoeg om dit op te lossen. Kom we gaan een oplossing zoeken in het bos!” moedigt ze de andere aan.
-
-Charley en Chaya gaan met volle moed mee met Oekie. Onderweg vinden ze vanalles in het bos.
-
-“Hier een tak!” roept Chaya. “Daar kunnen we misschien iets mee doen.”
-
-Oekie zegt blij: “Goed zo Chaya, ik heb al 2 grote eikels gevonden.”
-
-Ook Charley vindt nog iets in het bos: “We kunnen misschien een handvat maken met deze bladeren?”
-
-“Zo hiermee kunnen we zeker een nieuwe drumstok maken!” besluit Oekie.
-
-Helpen jullie mee?
-
-Zo dat heb jij goed gedaan!
-
-Charley heeft zijn nieuwe drumstok uitgeprobeerd en het klinkt fantastisch.
-
-Nu gaan ze samen het boslied inoefenen.
-
-Ook jij kan het lied hier inoefenen.
-
-Zing met ons mee!
-Wij zijn de Zwamzakken, hopla hopla ho!
-
-Wij spelen muziek, daar word je blij van zo!
-
-Toet-toet, pling-pling, ratatam-tam-tam,
-
-Sterk van planten, ja dat kan!
-
-Wij zijn de Zwamzakken, hopla hopla ho!
-
-Wij spelen muziek, daar word je blij van zo!
-
-Toet-toet, pling-pling, ratatam-tam-tam,
-
-Sterk van planten, ja dat kan!
-
-Charley slaat, op z’n trommel zo hard,
-
-Oekie tokkelt, op haar gitaar zo zacht,
-
-Chaya blaast op haar trompetje,
-
-Plantenkracht dat is een pretje!
-
-“Wauw, nu zijn we helemaal klaar voor het concert. Spannend!” zegt Charley vrolijk.
-
-“Amai wat is er veel volk. Kijk daar is Dorien de duif!” zegt Oekie.
-
-Het concert was prachtig en de zwamzakken speelden nog lang muziek.
-
-Dit allemaal omdat ze zo sterk en gezond zijn!
-`;
-
-    // split into sentences (approx) and display as separate spans
     function splitSentences(text){
-      // naive split: split on two or more newlines to get paragraphs, then split by sentence punctuation
       const paras = text.split(/\n{2,}/).map(p=>p.trim()).filter(Boolean);
       const sentences = [];
       paras.forEach(p=>{
-        // split on punctuation followed by space, keep punctuation
         const parts = p.match(/[^.!?\n]+[.!?]{0,1}/g) || [p];
         parts.forEach(s=>{const t=s.trim(); if(t) sentences.push(t)});
-      })
+      });
       return sentences;
     }
 
@@ -168,13 +68,10 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
       span.className = 'sentence';
       span.id = 's'+i;
       span.textContent = s;
-      span.setAttribute('data-index',i);
-      span.tabIndex = 0;
       span.addEventListener('click', ()=>{goToSentence(i);});
       storyEl.appendChild(span);
     });
 
-    // Speech logic
     let synth = window.speechSynthesis;
     let voices = [];
     let currentIndex = 0;
@@ -185,20 +82,24 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
     const rateInput = document.getElementById('rate');
     const volumeInput = document.getElementById('volume');
     const playBtn = document.getElementById('playPause');
-    const back10 = document.getElementById('back10');
-    const forward10 = document.getElementById('forward10');
     const stopBtn = document.getElementById('stop');
 
     function populateVoices(){
-      voices = synth.getVoices().filter(v=>v.lang && v.name);
+      voices = synth.getVoices().filter(v=>v.lang.startsWith('nl') || v.lang.startsWith('en'));
       voiceSelect.innerHTML = '';
       voices.forEach((v,i)=>{
         const o = document.createElement('option');
         o.value = i;
-        o.textContent = v.name + ' — ' + v.lang + (v.default? ' (default)':'');
+        o.textContent = v.name + ' — ' + v.lang + (v.default? ' (standaard)':'');
         voiceSelect.appendChild(o);
       });
+      // probeer automatisch een kindvriendelijke stem te selecteren
+      const kinderStem = voices.find(v=>/child|kinder|kids|young|junior/i.test(v.name));
+      if(kinderStem){
+        voiceSelect.value = voices.indexOf(kinderStem);
+      }
     }
+
     populateVoices();
     if (speechSynthesis.onvoiceschanged !== undefined) {
       speechSynthesis.onvoiceschanged = populateVoices;
@@ -211,17 +112,12 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
     }
 
     function createUtter(text){
-      if(!('speechSynthesis' in window)) return null;
       const u = new SpeechSynthesisUtterance(text);
       const v = voices[voiceSelect.value];
       if(v) u.voice = v;
       u.rate = parseFloat(rateInput.value);
       u.volume = parseFloat(volumeInput.value);
       u.onend = onUtterEnd;
-      // boundary event may help highlight words if supported
-      u.onboundary = (e)=>{
-        // optional: could highlight word via e.charIndex but Safari support varies
-      };
       return u;
     }
 
@@ -231,14 +127,12 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
       currentIndex = idx;
       highlight(currentIndex);
       utter = createUtter(sentences[currentIndex]);
-      if(!utter){ alert('Spraak niet ondersteund in deze browser.'); return; }
       playing = true;
       updatePlayButton();
       synth.speak(utter);
     }
 
     function onUtterEnd(){
-      // move to next sentence
       currentIndex++;
       if(currentIndex < sentences.length && playing){
         speakFrom(currentIndex);
@@ -250,12 +144,10 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
 
     function togglePlayPause(){
       if(playing){
-        // pause
-        synth.cancel(); // cancel current utterance; we'll remember currentIndex and resume same sentence
+        synth.cancel();
         playing = false;
         updatePlayButton();
       } else {
-        // resume from currentIndex
         speakFrom(currentIndex);
       }
     }
@@ -274,63 +166,27 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
       if(playing) speakFrom(currentIndex); else highlight(currentIndex);
     }
 
-    // approximate skip by counting words (since we don't have audio time)
-    function skipSeconds(nSeconds){
-      // estimate words per minute baseline
-      const baselineWPM = 160; // average speaking speed
-      const wpm = baselineWPM * parseFloat(rateInput.value);
-      const wordsPerSecond = wpm / 60;
-      const wordsToSkip = Math.round(wordsPerSecond * Math.abs(nSeconds));
-      // count words forward/backward until reach wordsToSkip
-      let i = currentIndex;
-      if(nSeconds > 0){
-        let acc = 0;
-        while(i < sentences.length-1 && acc < wordsToSkip){
-          acc += sentences[i].split(/\s+/).length;
-          i++;
-        }
-      } else {
-        let acc = 0;
-        while(i > 0 && acc < wordsToSkip){
-          acc += sentences[i].split(/\s+/).length;
-          i--;
-        }
-      }
-      goToSentence(i);
-      if(playing){ speakFrom(i); }
-    }
-
     function updatePlayButton(){
       playBtn.textContent = playing ? '⏸︎' : '▶︎';
     }
 
-    // event listeners
     playBtn.addEventListener('click', ()=>{
-      // if not started, start from currentIndex
       if(!playing) speakFrom(currentIndex);
       else togglePlayPause();
     });
-    stopBtn.addEventListener('click', stop);
-    back10.addEventListener('click', ()=>{ skipSeconds(-10); });
-    forward10.addEventListener('click', ()=>{ skipSeconds(10); });
 
-    // update voice/rate while speaking: restart current sentence to apply new settings
+    stopBtn.addEventListener('click', stop);
+
     voiceSelect.addEventListener('change', ()=>{ if(playing){ synth.cancel(); speakFrom(currentIndex); } });
     rateInput.addEventListener('change', ()=>{ if(playing){ synth.cancel(); speakFrom(currentIndex); } });
     volumeInput.addEventListener('change', ()=>{ if(playing){ synth.cancel(); speakFrom(currentIndex); } });
 
-    // keyboard support: space = play/pause, left/right = skip
     window.addEventListener('keydown', (e)=>{
       if(e.code === 'Space'){ e.preventDefault(); togglePlayPause(); }
-      if(e.key === 'ArrowLeft'){ e.preventDefault(); skipSeconds(-10); }
-      if(e.key === 'ArrowRight'){ e.preventDefault(); skipSeconds(10); }
     });
 
-    // initial highlight
     highlight(0);
-
-    // Small note about mobile: some browsers require a user gesture to start audio/speech.
-    // Also, Safari/iPadOS may pause speech when the screen locks.
   </script>
 </body>
 </html>
+
