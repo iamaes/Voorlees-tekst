@@ -58,142 +58,206 @@
       <div class="meta"></div>
     </main>
   </div>
-
-  <script>
-    const rawText = `
+<script>
+  const rawText = `
 In het diepe, donkergroene bos wonen 3 vrolijke champignons: Charley, Oekie en Chaya. Ze noemen zichzelf de zwamzakken.
-...
+
+Iedere ochtend oefenen ze samen muziek.
+
+Oekie tokkelt pling-plong! op haar gitaar,
+
+Charley trommelt ratatam! op zijn trommel
+
+En Chaya blaast toet-toet! op haar trompet.
+
+Ze hebben groot nieuws.
+
+“Vanavond is het groene concert!” roept Chaya.
+
+“Dan spelen we voor alle dieren van het bos.” zegt Oekie blij.
+
+Oh nee... tijdens het oefenen breekt een drumstok van Charley
+
+Charley zucht: “Wat moeten we nu doen?”
+
+Chaya legt haar trompet neer en zegt: “Hoe moeten we nu een concert geven zonder drumstokken?”.
+
+Gelukkig was er nog Oekie. Zij is altijd positief en heeft een goed idee. “Zeg vrienden, wij zijn plantaardige eiwitten! We zijn sterk genoeg om dit op te lossen. Kom we gaan een oplossing zoeken in het bos!” moedigt ze de andere aan.
+
+Charley en Chaya gaan met volle moed mee met Oekie. Onderweg vinden ze vanalles in het bos.
+
+“Hier een tak!” roept Chaya. “Daar kunnen we misschien iets mee doen.”
+
+Oekie zegt blij: “Goed zo Chaya, ik heb al 2 grote eikels gevonden.”
+
+Ook Charley vindt nog iets in het bos: “We kunnen misschien een handvat maken met deze bladeren?”
+
+“Zo hiermee kunnen we zeker een nieuwe drumstok maken!” besluit Oekie.
+
+Helpen jullie mee?
+
+Zo dat heb jij goed gedaan!
+
+Charley heeft zijn nieuwe drumstok uitgeprobeerd en het klinkt fantastisch.
+
+Nu gaan ze samen het boslied inoefenen.
+
+Ook jij kan het lied hier inoefenen.
+
+Zing met ons mee!
+Wij zijn de Zwamzakken, hopla hopla ho!
+
+Wij spelen muziek, daar word je blij van zo!
+
+Toet-toet, pling-pling, ratatam-tam-tam,
+
+Sterk van planten, ja dat kan!
+
+Wij zijn de Zwamzakken, hopla hopla ho!
+
+Wij spelen muziek, daar word je blij van zo!
+
+Toet-toet, pling-pling, ratatam-tam-tam,
+
+Sterk van planten, ja dat kan!
+
+Charley slaat, op z’n trommel zo hard,
+
+Oekie tokkelt, op haar gitaar zo zacht,
+
+Chaya blaast op haar trompetje,
+
+Plantenkracht dat is een pretje!
+
+“Wauw, nu zijn we helemaal klaar voor het concert. Spannend!” zegt Charley vrolijk.
+
+“Amai wat is er veel volk. Kijk daar is Dorien de duif!” zegt Oekie.
+
+Het concert was prachtig en de zwamzakken speelden nog lang muziek.
+
+Dit allemaal omdat ze zo sterk en gezond zijn!
 `;
 
-    // split sentences
-    function splitSentences(text){
-      const paras = text.split(/\n{2,}/).map(p=>p.trim()).filter(Boolean);
-      const sentences = [];
-      paras.forEach(p=>{
-        const parts = p.match(/[^.!?\n]+[.!?]{0,1}/g) || [p];
-        parts.forEach(s=>{const t=s.trim(); if(t) sentences.push(t)});
-      });
-      return sentences;
-    }
-
-    const sentences = splitSentences(rawText);
-    const storyEl = document.getElementById('story');
-    sentences.forEach((s,i)=>{
-      const span = document.createElement('div');
-      span.className = 'sentence';
-      span.id = 's'+i;
-      span.textContent = s;
-      span.addEventListener('click', ()=>{goToSentence(i);});
-      storyEl.appendChild(span);
+  function splitSentences(text){
+    const paras = text.split(/\n{2,}/).map(p=>p.trim()).filter(Boolean);
+    const sentences = [];
+    paras.forEach(p=>{
+      const parts = p.match(/[^.!?\n]+[.!?]{0,1}/g) || [p];
+      parts.forEach(s=>{const t=s.trim(); if(t) sentences.push(t)});
     });
+    return sentences;
+  }
 
-    let synth = window.speechSynthesis;
-    let voices = [];
-    let currentIndex = 0;
-    let playing = false;
-    let utter = null;
+  const sentences = splitSentences(rawText);
+  const storyEl = document.getElementById('story');
+  sentences.forEach((s,i)=>{
+    const span = document.createElement('div');
+    span.className = 'sentence';
+    span.id = 's'+i;
+    span.textContent = s;
+    span.addEventListener('click', ()=>{goToSentence(i);});
+    storyEl.appendChild(span);
+  });
 
-    const voiceSelect = document.getElementById('voiceSelect');
-    const rateInput = document.getElementById('rate');
-    const volumeInput = document.getElementById('volume');
-    const playBtn = document.getElementById('playPause');
-    const stopBtn = document.getElementById('stop');
+  let synth = window.speechSynthesis;
+  let voices = [];
+  let currentIndex = 0;
+  let playing = false;
+  let utter = null;
 
-    function populateVoices(){
-      voices = synth.getVoices().filter(v=>v.lang && v.name);
-      voiceSelect.innerHTML = '';
-      voices.forEach((v,i)=>{
-        const o = document.createElement('option');
-        o.value = i;
-        o.textContent = v.name + ' — ' + v.lang + (v.default? ' (default)':'');
-        voiceSelect.appendChild(o);
-      });
-      // probeer automatisch een kindvriendelijke NL-stem te kiezen
-      const kinderStem = voices.find(v => /nl/i.test(v.lang) && /Google Nederlands Female|nl-NL/g.test(v.name));
-      if (kinderStem) {
-        voiceSelect.value = voices.indexOf(kinderStem);
-      }
+  const voiceSelect = document.getElementById('voiceSelect');
+  const rateInput = document.getElementById('rate');
+  const volumeInput = document.getElementById('volume');
+  const playBtn = document.getElementById('playPause');
+  const stopBtn = document.getElementById('stop');
+
+  function populateVoices(){
+    voices = synth.getVoices().filter(v=>v.lang && v.name);
+    voiceSelect.innerHTML = '';
+    voices.forEach((v,i)=>{
+      const o = document.createElement('option');
+      o.value = i;
+      o.textContent = v.name + ' — ' + v.lang + (v.default? ' (default)':'');
+      voiceSelect.appendChild(o);
+    });
+    const kinderStem = voices.find(v => /nl/i.test(v.lang) && /Google Nederlands Female|nl-NL/g.test(v.name));
+    if (kinderStem) {
+      voiceSelect.value = voices.indexOf(kinderStem);
     }
-    populateVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = populateVoices;
-    }
+  }
+  populateVoices();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = populateVoices;
+  }
 
-    function highlight(i){
-      document.querySelectorAll('.sentence').forEach(el=>el.classList.remove('active'));
-      const el = document.getElementById('s'+i);
-      if(el){ el.classList.add('active'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
-    }
+  function highlight(i){
+    document.querySelectorAll('.sentence').forEach(el=>el.classList.remove('active'));
+    const el = document.getElementById('s'+i);
+    if(el){ el.classList.add('active'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
+  }
 
-    // verwijder aanhalingstekens
-    function cleanText(t){
-      return t.replace(/[“”"']/g,'');
-    }
+  function cleanText(t){
+    return t.replace(/[“”"']/g,'');
+  }
 
-    function createUtter(text){
-      const u = new SpeechSynthesisUtterance(cleanText(text));
-      const v = voices[voiceSelect.value];
-      if(v) u.voice = v;
-      u.rate = parseFloat(rateInput.value);
-      u.volume = parseFloat(volumeInput.value);
-      u.onend = onUtterEnd;
-      return u;
-    }
+  async function speakFrom(idx){
+    if(idx < 0) idx = 0;
+    if(idx >= sentences.length){ stop(); return; }
+    playing = true;
+    currentIndex = idx;
+    highlight(currentIndex);
 
-    function speakFrom(idx){
-      if(idx < 0) idx = 0;
-      if(idx >= sentences.length){ stop(); return; }
-      currentIndex = idx;
-      highlight(currentIndex);
-      utter = createUtter(sentences[currentIndex]);
-      playing = true;
-      updatePlayButton();
-      synth.speak(utter);
-    }
-
-    function onUtterEnd(){
-      currentIndex++;
-      if(currentIndex < sentences.length && playing){
-        speakFrom(currentIndex);
+    const text = cleanText(sentences[currentIndex]);
+    utter = new SpeechSynthesisUtterance(text);
+    const v = voices[voiceSelect.value];
+    if(v) utter.voice = v;
+    utter.rate = parseFloat(rateInput.value);
+    utter.volume = parseFloat(volumeInput.value);
+    utter.onend = () => setTimeout(() => {
+      if(playing && currentIndex < sentences.length - 1){
+        speakFrom(currentIndex + 1);
       } else {
         playing = false;
         updatePlayButton();
       }
-    }
+    }, 150); // kleine wachttijd voorkomt vastlopen bij Safari
 
-    function togglePlayPause(){
-      if(playing){
-        synth.cancel();
-        playing = false;
-      } else {
-        speakFrom(currentIndex);
-      }
-      updatePlayButton();
-    }
+    synth.speak(utter);
+    updatePlayButton();
+  }
 
-    function stop(){
+  function togglePlayPause(){
+    if(playing){
       synth.cancel();
       playing = false;
-      currentIndex = 0;
-      highlight(currentIndex);
-      updatePlayButton();
+    } else {
+      speakFrom(currentIndex);
     }
+    updatePlayButton();
+  }
 
-    function goToSentence(i){
-      synth.cancel();
-      currentIndex = i;
-      if(playing) speakFrom(currentIndex); else highlight(currentIndex);
-    }
+  function stop(){
+    synth.cancel();
+    playing = false;
+    currentIndex = 0;
+    highlight(currentIndex);
+    updatePlayButton();
+  }
 
-    function updatePlayButton(){
-      playBtn.textContent = playing ? '⏸︎' : '▶︎';
-    }
+  function goToSentence(i){
+    synth.cancel();
+    currentIndex = i;
+    if(playing) speakFrom(currentIndex); else highlight(currentIndex);
+  }
 
-    playBtn.addEventListener('click', togglePlayPause);
-    stopBtn.addEventListener('click', stop);
+  function updatePlayButton(){
+    playBtn.textContent = playing ? '⏸︎' : '▶︎';
+  }
 
-    highlight(0);
-  </script>
+  playBtn.addEventListener('click', togglePlayPause);
+  stopBtn.addEventListener('click', stop);
+  highlight(0);
+</script>
 </body>
 </html>
 
