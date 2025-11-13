@@ -14,16 +14,15 @@
     .controls{display:flex;gap:12px;align-items:center;margin-top:12px}
     button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;box-shadow:0 6px 18px rgba(42,157,143,.18)}
     button.secondary{background:#eee;color:var(--accent-2);box-shadow:none}
-    button.big{padding:22px 26px;font-size:28px;border-radius:20px} /* play/pause groter */
+    button.big{padding:22px 26px;font-size:28px;border-radius:20px}
     .small{padding:8px 10px;font-size:14px}
     .toolbar{display:flex;gap:10px;align-items:center;margin-left:auto}
     select,input[type=range]{padding:8px;border-radius:8px;border:1px solid #ddd}
     main{margin-top:14px}
-    .story{line-height:1.6;font-size:18px;color:#222;max-height:48vh;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb)}
-    .sentence{padding:2px 4px;border-radius:6px}
+    .story{line-height:1.9;font-size:18px;color:#222;max-height:48vh;overflow:auto;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb)}
+    .sentence{padding:4px 4px 10px;border-radius:6px}
     .active{background:rgba(42,157,143,.12);}
     .meta{margin-top:10px;color:var(--muted);font-size:14px}
-    .hint{font-size:13px;color:#666}
     .big-buttons{display:flex;gap:8px}
     @media (max-width:520px){button{padding:10px;font-size:15px} .controls{flex-wrap:wrap}}
   </style>
@@ -34,7 +33,6 @@
       <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='54' height='54'><rect rx='12' width='54' height='54' fill='%23264653'/><text x='50%' y='55%' text-anchor='middle' font-size='26' font-family='sans-serif' fill='white'>🎧</text></rect></svg>" alt="logo" width="54" height="54">
       <div>
         <h1>De Zwamzakken — voorleesmodus</h1>
-        <div class="meta"></div>
       </div>
       <div class="toolbar">
         <label for="voiceSelect" class="sr-only">Stem</label>
@@ -49,15 +47,15 @@
         <button id="playPause" class="big">▶︎</button>
       </div>
       <button id="stop" class="secondary small">Stop</button>
-      <div style="margin-left:8px;color:#444">Volume</div>
-      <input id="volume" type="range" min="0" max="1" step="0.05" value="1" style="width:110px">
     </div>
 
     <main>
       <div id="story" class="story" tabindex="0" aria-live="polite"></div>
-      <div class="meta"></div>
     </main>
   </div>
+
+  <audio id="boslied" src="zwamzakken.mp3"></audio>
+
 <script>
   const rawText = `
 In het diepe, donkergroene bos wonen 3 vrolijke champignons: Charley, Oekie en Chaya. Ze noemen zichzelf de zwamzakken.
@@ -164,10 +162,10 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
   let currentIndex = 0;
   let playing = false;
   let utter = null;
+  const boslied = document.getElementById('boslied');
 
   const voiceSelect = document.getElementById('voiceSelect');
   const rateInput = document.getElementById('rate');
-  const volumeInput = document.getElementById('volume');
   const playBtn = document.getElementById('playPause');
   const stopBtn = document.getElementById('stop');
 
@@ -180,15 +178,11 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
       o.textContent = v.name + ' — ' + v.lang + (v.default? ' (default)':'');
       voiceSelect.appendChild(o);
     });
-    const kinderStem = voices.find(v => /nl/i.test(v.lang) && /Google Nederlands Female|nl-NL/g.test(v.name));
-    if (kinderStem) {
-      voiceSelect.value = voices.indexOf(kinderStem);
-    }
+    const kinderStem = voices.find(v => /nl/i.test(v.lang));
+    if (kinderStem) voiceSelect.value = voices.indexOf(kinderStem);
   }
   populateVoices();
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    speechSynthesis.onvoiceschanged = populateVoices;
-  }
+  if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = populateVoices;
 
   function highlight(i){
     document.querySelectorAll('.sentence').forEach(el=>el.classList.remove('active'));
@@ -196,9 +190,7 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
     if(el){ el.classList.add('active'); el.scrollIntoView({behavior:'smooth',block:'center'}); }
   }
 
-  function cleanText(t){
-    return t.replace(/[“”"']/g,'');
-  }
+  function cleanText(t){ return t.replace(/[“”"']/g,''); }
 
   async function speakFrom(idx){
     if(idx < 0) idx = 0;
@@ -212,15 +204,24 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
     const v = voices[voiceSelect.value];
     if(v) utter.voice = v;
     utter.rate = parseFloat(rateInput.value);
-    utter.volume = parseFloat(volumeInput.value);
-    utter.onend = () => setTimeout(() => {
-      if(playing && currentIndex < sentences.length - 1){
-        speakFrom(currentIndex + 1);
-      } else {
-        playing = false;
-        updatePlayButton();
+
+    utter.onend = () => {
+      let delay = 600; // standaard korte pauze
+      if (text.includes('Helpen jullie mee')) delay = 10000; // 10s rust
+      if (text.includes('Nu gaan ze samen het boslied inoefenen')) {
+        boslied.currentTime = 0;
+        boslied.play();
+        setTimeout(()=> boslied.pause(), 67000); // stopt na 1:07
       }
-    }, 150); // kleine wachttijd voorkomt vastlopen bij Safari
+      setTimeout(() => {
+        if(playing && currentIndex < sentences.length - 1){
+          speakFrom(currentIndex + 1);
+        } else {
+          playing = false;
+          updatePlayButton();
+        }
+      }, delay);
+    };
 
     synth.speak(utter);
     updatePlayButton();
@@ -228,7 +229,7 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
 
   function togglePlayPause(){
     if(playing){
-      synth.cancel();
+      synth.cancel(); boslied.pause();
       playing = false;
     } else {
       speakFrom(currentIndex);
@@ -237,7 +238,7 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
   }
 
   function stop(){
-    synth.cancel();
+    synth.cancel(); boslied.pause();
     playing = false;
     currentIndex = 0;
     highlight(currentIndex);
@@ -260,4 +261,5 @@ Dit allemaal omdat ze zo sterk en gezond zijn!
 </script>
 </body>
 </html>
+
 
