@@ -42,11 +42,18 @@
         <source src="Zwamzakken_lied.mp3" type="audio/mpeg">
         Uw browser ondersteunt het audio-element niet.
     </audio>
+    
+    <audio id="audioLast" preload="auto">
+        <source src="laatste.mp3" type="audio/mpeg">
+        Uw browser ondersteunt het audio-element niet.
+    </audio>
 
     <script>
         // Pak de HTML-elementen
         const story = document.getElementById('audioStory');
         const song = document.getElementById('audioSong');
+        // **NIEUW:** Pak het laatste audio-element
+        const last = document.getElementById('audioLast'); 
         const playPauseButton = document.getElementById('playPauseButton');
 
         // Houd bij welk audio-element momenteel actief is
@@ -67,9 +74,8 @@
             }
         });
 
-        // --- Event Listener voor het automatisch overgaan naar het liedje ---
+        // --- Event Listener voor het automatisch overgaan naar het liedje (na verhaal) ---
         story.addEventListener('ended', function() {
-            // Pauzeer het verhaal (is al 'ended', maar voor de zekerheid)
             story.pause(); 
             // Stel de huidige audio in op het liedje
             currentAudio = song;
@@ -80,8 +86,19 @@
             });
         });
 
-        // TIP: Als je op de knop drukt tijdens het liedje, pauzeert het liedje, 
-        // en de volgende keer dat je drukt, zal het liedje verder spelen. 
+        // --- **NIEUW:** Event Listener voor het automatisch overgaan naar "laatste.mp3" (na liedje) ---
+        song.addEventListener('ended', function() {
+            song.pause(); 
+            // Stel de huidige audio in op "laatste.mp3"
+            currentAudio = last;
+            // Speel "laatste.mp3" af
+            currentAudio.play().catch(error => {
+                console.error("Fout bij automatisch afspelen van laatste bestand:", error);
+                alert("Het laatste audiobestand kon niet automatisch starten.");
+            });
+        });
+        
+        // TIP: Als je op de knop drukt tijdens het laatste.mp3, pauzeert het.
         // Als je het verhaal opnieuw wilt starten, moet je de pagina herladen.
 
     </script>
