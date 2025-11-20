@@ -43,9 +43,12 @@
   <!-- Lied -->
   <audio id="song" src="Zwamzakken_lied.mp3"></audio>
 
+  <!-- Belgeluid -->
+  <audio id="bell" src="bell.mp3"></audio>
+
 <script>
-  // De volledige tekst die op het scherm moet verschijnen
-  const storyText = `
+  // De volledige tekst, inclusief belletjes
+  let storyTextRaw = `
 Lieve Chaya, zegt Paul de Mol voorzichtig…
 Jij zingt over liefde, mooi en lief…
 Jij bent echt een harte-dief.
@@ -59,7 +62,7 @@ Vanavond, zegt Paul, geef ik een feestje bij de grote blauwe vijver…
 En het wordt reuzeleuk met jou erbij!
 (belletje, zodat kind weet dat hij de pagina moet omslaan)
 
-Het liedje van de zwamzakken: ( = computerstem laten inspreken)
+Het liedje van de zwamzakken:
 liedje : "Zwamzakken_lied.mp3"
 
 Wij zijn de Zwamzakken, hopla hopla ho!
@@ -77,35 +80,84 @@ Wij spelen muziek, daar word je blij van zo!
 Toet-toet, pling-pling, ratatam-tam-tam,
 Sterk van planten, ja dat kan!
 
-Einde ( = computerstem laten inspreken)
+Einde
 
-Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken met jouw ouders! (= computerstem laten inspreken)
+Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken met jouw ouders!
 `;
 
-  // Tekst in het document zetten
-  document.getElementById('story').textContent = storyText;
+  // Toon tekst zonder belletjes in beeld
+  document.getElementById('story').textContent =
+    storyTextRaw.replace(/\(belletje[^)]+\)/g, '');
 
-  const audio = document.getElementById('voiceAudio');
+  const voice = document.getElementById('voiceAudio');
+  const song = document.getElementById('song');
+  const bell = document.getElementById('bell');
   const playBtn = document.getElementById('playPause');
   const stopBtn = document.getElementById('stop');
 
+  let specialTriggered = false;
+
   function updateButton(){
-    playBtn.textContent = audio.paused ? '▶︎' : '⏸︎';
+    playBtn.textContent = (voice.paused && song.paused) ? '▶︎' : '⏸︎';
+  }
+
+  // 🎵 detecteer wanneer muziekstuk moet starten
+  function checkTriggers(){
+    // 1. belletjes afspelen op basis van tijdcodes uit mp3 (hier moet jij tijdcodes invullen)
+    // Voorbeeld: (vervang door echte tijdcodes!)
+    const bellMoments = [4, 10, 18]; // seconden waarin (belletje...) stond
+
+    bellMoments.forEach(t => {
+      if(Math.abs(voice.currentTime - t) < 0.15){
+        bell.play();
+      }
+    });
+
+    // 2. NA "En het wordt reuzeleuk met jou erbij!"
+    //    → computerstem + lied
+    // Tijdcode van het einde van die zin (ZIJNDE JE MOET DIT AANGEVEN)
+    const triggerTime = 22; // seconde waarop die zin eindigt → PAS DIT AAN AAN JOUW MP3
+
+    if(!specialTriggered && voice.currentTime >= triggerTime){
+      specialTriggered = true;
+
+      // pauzeer verhaal
+      voice.pause();
+
+      // spreek computertekst
+      let u = new SpeechSynthesisUtterance("Luister nu naar het liedje van de zwamzakken.");
+      u.lang = "nl-NL";
+      u.rate = 1;
+      u.onend = () => {
+        song.currentTime = 0;
+        song.play();
+      };
+      speechSynthesis.speak(u);
+    }
   }
 
   playBtn.onclick = ()=>{
-    if(audio.paused){ audio.play(); }
-    else{ audio.pause(); }
+    if(voice.paused && song.paused){
+      specialTriggered = false;
+      voice.play();
+    } else {
+      voice.pause();
+      song.pause();
+    }
     updateButton();
   };
 
   stopBtn.onclick = ()=>{
-    audio.pause();
-    audio.currentTime = 0;
+    voice.pause();
+    song.pause();
+    voice.currentTime = 0;
+    song.currentTime = 0;
     updateButton();
   };
 
-  audio.onended = updateButton;
+  voice.ontimeupdate = checkTriggers;
+  voice.onended = updateButton;
+  song.onended = updateButton;
 </script>
 </body>
 </html>
