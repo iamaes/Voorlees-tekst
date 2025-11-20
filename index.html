@@ -1,51 +1,3 @@
-<!doctype html>
-<html lang="nl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Voorlees-site — De Zwamzakken</title>
-  <style>
-    :root{--bg:#f7fbf7;--card:#ffffff;--accent:#2a9d8f;--accent-2:#264653;--muted:#7a7a7a}
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{background:linear-gradient(180deg,#eaf6f2,white);display:flex;align-items:center;justify-content:center;padding:20px}
-    .card{width:980px;max-width:100%;background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px}
-    h1{margin:0;font-size:20px;color:var(--accent-2)}
-    .controls{display:flex;gap:12px;align-items:center;margin-top:12px}
-    button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;box-shadow:0 6px 18px rgba(42,157,143,.18)}
-    button.secondary{background:#eee;color:var(--accent-2);box-shadow:none}
-    button.big{padding:22px 26px;font-size:28px;border-radius:20px}
-    .story{line-height:1.9;font-size:19px;color:#222;max-height:60vh;overflow:auto;padding:16px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb)}
-    .big-buttons{display:flex;gap:8px}
-  </style>
-</head>
-
-<body>
-  <div class="card">
-    <header>
-      <h1>De Zwamzakken — voorleesmodus</h1>
-    </header>
-
-    <div class="controls">
-      <div class="big-buttons">
-        <button id="playPause" class="big">▶︎</button>
-      </div>
-      <button id="stop" class="secondary small">Stop</button>
-    </div>
-
-    <main>
-      <div id="story" class="story"></div>
-    </main>
-  </div>
-
-  <!-- Voorlees-audio -->
-  <audio id="voiceAudio" src="De Zwamzakken_artevelde.mp3"></audio>
-
-  <!-- Lied -->
-  <audio id="song" src="Zwamzakken_lied.mp3"></audio>
-
-  <!-- Belgeluid -->
-  <audio id="bell" src="bell.mp3"></audio>
-
 <script>
   // De volledige tekst, inclusief belletjes
   let storyTextRaw = `
@@ -96,42 +48,42 @@ Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken m
   const stopBtn = document.getElementById('stop');
 
   let specialTriggered = false;
+  let bellPlayed = {14:false,21:false,27:false};
 
   function updateButton(){
     playBtn.textContent = (voice.paused && song.paused) ? '▶︎' : '⏸︎';
   }
 
-  // 🎵 detecteer wanneer muziekstuk moet starten
   function checkTriggers(){
-    // 1. belletjes afspelen op basis van tijdcodes uit mp3 (hier moet jij tijdcodes invullen)
-    // Voorbeeld: (vervang door echte tijdcodes!)
-    const bellMoments = [14, 21, 27]; // seconden waarin (belletje...) stond
+    const now = voice.currentTime;
 
-    bellMoments.forEach(t => {
-      if(Math.abs(voice.currentTime - t) < 0.15){
+    // --- BELTJES OP 14, 21 EN 27 SEC ---
+    [14,21,27].forEach(t=>{
+      if(!bellPlayed[t] && now >= t){
+        bellPlayed[t] = true;
+        bell.currentTime = 0;
         bell.play();
       }
     });
 
-    // 2. NA "En het wordt reuzeleuk met jou erbij!"
-    //    → computerstem + lied
-    // Tijdcode van het einde van die zin (ZIJNDE JE MOET DIT AANGEVEN)
-    const triggerTime = 28; // seconde waarop die zin eindigt → PAS DIT AAN AAN JOUW MP3
-
-    if(!specialTriggered && voice.currentTime >= triggerTime){
+    // --- NA 28 SEC: PAUZE → STEM → LIED ---
+    if(!specialTriggered && now >= 28){
       specialTriggered = true;
 
-      // pauzeer verhaal
       voice.pause();
 
-      // spreek computertekst
-      let u = new SpeechSynthesisUtterance("Luister nu naar het liedje van de zwamzakken.");
+      let u = new SpeechSynthesisUtterance(
+        "Luister nu naar het liedje van de zwamzakken."
+      );
       u.lang = "nl-NL";
       u.rate = 1;
-      u.onend = () => {
+
+      u.onend = ()=>{
         song.currentTime = 0;
         song.play();
+        updateButton();
       };
+
       speechSynthesis.speak(u);
     }
   }
@@ -139,6 +91,8 @@ Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken m
   playBtn.onclick = ()=>{
     if(voice.paused && song.paused){
       specialTriggered = false;
+      bellPlayed = {14:false,21:false,27:false};
+      voice.currentTime = 0;
       voice.play();
     } else {
       voice.pause();
@@ -152,6 +106,8 @@ Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken m
     song.pause();
     voice.currentTime = 0;
     song.currentTime = 0;
+    specialTriggered = false;
+    bellPlayed = {14:false,21:false,27:false};
     updateButton();
   };
 
@@ -159,8 +115,7 @@ Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken m
   voice.onended = updateButton;
   song.onended = updateButton;
 </script>
-</body>
-</html>
+
 
 
 
