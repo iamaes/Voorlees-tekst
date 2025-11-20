@@ -2,166 +2,87 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verhaal zwamzakken</title>
     <style>
-        /* Optionele CSS voor een betere look */
+        /* Optionele CSS om de knop er netter uit te laten zien */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding-top: 50px;
+            background-color: #f4f4f4;
         }
-        #play-pause-btn {
+        button {
             padding: 10px 20px;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
 
-    <h1>Verhaal zwamzakken</h1>
+    <h1>Verhaal Zwamzakken</h1>
+    
+    <button id="playPauseButton">Speel Af / Pauzeer</button>
 
-    <audio id="verhaal-audio" src="Voorleestekst2.mp3"></audio>
-    <audio id="liedje-audio" src="Zwamzakken_lied.mp3"></audio>
+    <audio id="audioStory" preload="auto">
+        <source src="Voorleestekst.mp3" type="audio/mpeg">
+        Uw browser ondersteunt het audio-element niet.
+    </audio>
 
-    <button id="play-pause-btn">▶ Afspelen</button>
-
-    <p id="status-text">Klaar om te starten.</p>
+    <audio id="audioSong" preload="auto">
+        <source src="Zwamzakken_lied.mp3" type="audio/mpeg">
+        Uw browser ondersteunt het audio-element niet.
+    </audio>
 
     <script>
-        // Selecteer de audio-elementen en de knop
-        const verhaalAudio = document.getElementById('verhaal-audio');
-        const liedjeAudio = document.getElementById('liedje-audio');
-        const playPauseBtn = document.getElementById('play-pause-btn');
-        const statusText = document.getElementById('status-text');
-        
-        // ** VOLUME-INSTELLING: Stel het volume in voor "Zwamzakken_lied.mp3" op 80% (0.8) **
-        liedjeAudio.volume = 0.8;
-        // Je kunt ook een standaard volume voor het verhaal instellen:
-        // verhaalAudio.volume = 1.0; 
+        // Pak de HTML-elementen
+        const story = document.getElementById('audioStory');
+        const song = document.getElementById('audioSong');
+        const playPauseButton = document.getElementById('playPauseButton');
 
-        // --- Web Speech API elementen ---
-        const synth = window.speechSynthesis;
-        const eindBoodschap = "speel nog dit spelletje, maak een puzzel en toon het receptje aan je ouders";
+        // Houd bij welk audio-element momenteel actief is
+        let currentAudio = story;
 
-        let isPlaying = false; // Houdt de huidige afspeelstatus bij
-        let isVerhaalPlaying = false; // Houdt bij of het verhaal bezig is
-        
-        // Functie om de computerstem te laten spreken
-        function spreekBoodschap(tekst) {
-            if (synth.speaking) {
-                synth.cancel(); // Annuleer eerdere spraak indien nodig
-            }
-
-            const utterance = new SpeechSynthesisUtterance(tekst);
-            // Optioneel: Stel de taal in op Nederlands (niet alle browsers ondersteunen dit perfect)
-            utterance.lang = 'nl-NL'; 
-            
-            // Laat de browser de tekst uitspreken
-            synth.speak(utterance);
-        }
-
-        // --- Functie om de afspeelsequentie te starten of te pauzeren ---
-        function togglePlayPause() {
-            if (isPlaying) {
-                // Pauzeer alles en annuleer de spraak
-                verhaalAudio.pause();
-                liedjeAudio.pause();
-                synth.cancel(); // Stop ook de computerstem
-                isPlaying = false;
-                playPauseBtn.textContent = '▶ Afspelen';
-                statusText.textContent = 'Gepauzeerd.';
+        // --- Event Listener voor de Speel/Pauze-knop ---
+        playPauseButton.addEventListener('click', function() {
+            // Controleer of de huidige audio is gepauzeerd
+            if (currentAudio.paused) {
+                // Speel af
+                currentAudio.play().catch(error => {
+                    console.error("Fout bij afspelen:", error);
+                    alert("Kan niet automatisch afspelen. Probeer handmatig af te spelen.");
+                });
             } else {
-                // Start of hervat het afspelen
-                isPlaying = true;
-                playPauseBtn.textContent = '⏸ Pauze';
-
-                if (verhaalAudio.currentTime > 0 && !verhaalAudio.ended) {
-                    // Hervat het verhaal
-                    verhaalAudio.play();
-                    statusText.textContent = 'Verhaal wordt hervat...';
-                    isVerhaalPlaying = true;
-                } else if (liedjeAudio.currentTime > 0 && !liedjeAudio.ended) {
-                    // Hervat het liedje
-                    liedjeAudio.play();
-                    statusText.textContent = 'Liedje wordt hervat...';
-                    isVerhaalPlaying = false;
-                } else {
-                    // Start vanaf het begin (reset liedje voor de zekerheid)
-                    liedjeAudio.currentTime = 0;
-                    verhaalAudio.currentTime = 0; // Zorg ervoor dat het verhaal ook wordt gereset
-                    
-                    // Start met het eerste bestand (het verhaal)
-                    verhaalAudio.play();
-                    statusText.textContent = 'Verhaal wordt afgespeeld...';
-                    isVerhaalPlaying = true;
-                }
+                // Pauzeer
+                currentAudio.pause();
             }
-        }
+        });
 
-        // --- Logica om het verhaal te laten overgaan in het liedje ---
-        verhaalAudio.onended = function() {
-            if (isPlaying) {
-                // Het verhaal is afgelopen, begin het liedje
-                isVerhaalPlaying = false;
-                liedjeAudio.play();
-                statusText.textContent = 'Liedje wordt afgespeeld...';
-            }
-        };
+        // --- Event Listener voor het automatisch overgaan naar het liedje ---
+        story.addEventListener('ended', function() {
+            // Pauzeer het verhaal (is al 'ended', maar voor de zekerheid)
+            story.pause(); 
+            // Stel de huidige audio in op het liedje
+            currentAudio = song;
+            // Speel het liedje af
+            currentAudio.play().catch(error => {
+                console.error("Fout bij automatisch afspelen van lied:", error);
+                alert("Het lied kon niet automatisch starten.");
+            });
+        });
 
-        // --- Logica wanneer het liedje ook is afgelopen ---
-        liedjeAudio.onended = function() {
-            // Alles is afgelopen
-            isPlaying = false;
-            playPauseBtn.textContent = '▶ Opnieuw Afspelen';
-            statusText.textContent = 'Alles is afgelopen. De computerstem spreekt nu.';
-            
-            // Laat de computerstem de boodschap uitspreken
-            spreekBoodschap(eindBoodschap);
-            
-            // Pas de status na het spreken aan
-            // Luister naar de 'end' gebeurtenis van de computerstem
-            synth.onvoiceschanged = function() {
-                const utterance = new SpeechSynthesisUtterance(eindBoodschap);
-                utterance.lang = 'nl-NL';
-                utterance.onend = function() {
-                    statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
-                    // Zet beide bestanden terug naar het beginpunt
-                    verhaalAudio.currentTime = 0;
-                    liedjeAudio.currentTime = 0;
-                    isVerhaalPlaying = false;
-                };
-                synth.speak(utterance);
-            };
-            
-            // Als de voices al geladen zijn, spreek direct en voeg de onend toe
-            if (synth.getVoices().length > 0) {
-                const utterance = new SpeechSynthesisUtterance(eindBoodschap);
-                utterance.lang = 'nl-NL';
-                utterance.onend = function() {
-                    statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
-                    // Zet beide bestanden terug naar het beginpunt
-                    verhaalAudio.currentTime = 0;
-                    liedjeAudio.currentTime = 0;
-                    isVerhaalPlaying = false;
-                };
-                synth.speak(utterance);
-            }
-        };
-
-        // --- Event Listener voor de knop ---
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        
-        // Zorg ervoor dat de pauze-status goed ingesteld is als een bestand vanzelf pauzeert (bijv. door een error)
-        verhaalAudio.onpause = liedjeAudio.onpause = function() {
-            if (!verhaalAudio.ended && !liedjeAudio.ended && !synth.speaking && isPlaying) {
-                 // Dit kan gebeuren bij handmatige pauze
-            } else if (!verhaalAudio.ended && !liedjeAudio.ended && isPlaying) {
-                // Handmatig gepauzeerd door knop of andere gebeurtenis
-                isPlaying = false;
-                playPauseBtn.textContent = '▶ Hervat';
-            }
-        };
+        // TIP: Als je op de knop drukt tijdens het liedje, pauzeert het liedje, 
+        // en de volgende keer dat je drukt, zal het liedje verder spelen. 
+        // Als je het verhaal opnieuw wilt starten, moet je de pagina herladen.
 
     </script>
 
