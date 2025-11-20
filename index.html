@@ -21,7 +21,7 @@
 
     <h1>Verhaal-zwamzakken</h1>
 
-    <audio id="verhaal-audio" src="Voorleestekst2.mp3"></audio>
+    <audio id="verhaal-audio" src="De Zwamzakken_artevelde.mp3"></audio>
     <audio id="liedje-audio" src="Zwamzakken_lied.mp3"></audio>
 
     <button id="play-pause-btn">▶ Afspelen</button>
@@ -34,16 +34,35 @@
         const liedjeAudio = document.getElementById('liedje-audio');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const statusText = document.getElementById('status-text');
+        
+        // --- Web Speech API elementen ---
+        const synth = window.speechSynthesis;
+        const eindBoodschap = "speel nog dit spelletje, maak een puzzel en toon het receptje aan je ouders";
 
         let isPlaying = false; // Houdt de huidige afspeelstatus bij
         let isVerhaalPlaying = false; // Houdt bij of het verhaal bezig is
         
+        // Functie om de computerstem te laten spreken
+        function spreekBoodschap(tekst) {
+            if (synth.speaking) {
+                synth.cancel(); // Annuleer eerdere spraak indien nodig
+            }
+
+            const utterance = new SpeechSynthesisUtterance(tekst);
+            // Optioneel: Stel de taal in op Nederlands (niet alle browsers ondersteunen dit perfect)
+            utterance.lang = 'nl-NL'; 
+            
+            // Laat de browser de tekst uitspreken
+            synth.speak(utterance);
+        }
+
         // --- Functie om de afspeelsequentie te starten of te pauzeren ---
         function togglePlayPause() {
             if (isPlaying) {
-                // Pauzeer alles
+                // Pauzeer alles en annuleer de spraak
                 verhaalAudio.pause();
                 liedjeAudio.pause();
+                synth.cancel(); // Stop ook de computerstem
                 isPlaying = false;
                 playPauseBtn.textContent = '▶ Afspelen';
                 statusText.textContent = 'Gepauzeerd.';
@@ -65,6 +84,7 @@
                 } else {
                     // Start vanaf het begin (reset liedje voor de zekerheid)
                     liedjeAudio.currentTime = 0;
+                    verhaalAudio.currentTime = 0; // Zorg ervoor dat het verhaal ook wordt gereset
                     
                     // Start met het eerste bestand (het verhaal)
                     verhaalAudio.play();
@@ -89,12 +109,39 @@
             // Alles is afgelopen
             isPlaying = false;
             playPauseBtn.textContent = '▶ Opnieuw Afspelen';
-            statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
+            statusText.textContent = 'Alles is afgelopen. De computerstem spreekt nu.';
             
-            // Zet beide bestanden terug naar het beginpunt
-            verhaalAudio.currentTime = 0;
-            liedjeAudio.currentTime = 0;
-            isVerhaalPlaying = false;
+            // Laat de computerstem de boodschap uitspreken
+            spreekBoodschap(eindBoodschap);
+            
+            // Pas de status na het spreken aan
+            // Luister naar de 'end' gebeurtenis van de computerstem
+            synth.onvoiceschanged = function() {
+                const utterance = new SpeechSynthesisUtterance(eindBoodschap);
+                utterance.lang = 'nl-NL';
+                utterance.onend = function() {
+                    statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
+                    // Zet beide bestanden terug naar het beginpunt
+                    verhaalAudio.currentTime = 0;
+                    liedjeAudio.currentTime = 0;
+                    isVerhaalPlaying = false;
+                };
+                synth.speak(utterance);
+            };
+            
+            // Als de voices al geladen zijn, spreek direct en voeg de onend toe
+            if (synth.getVoices().length > 0) {
+                const utterance = new SpeechSynthesisUtterance(eindBoodschap);
+                utterance.lang = 'nl-NL';
+                utterance.onend = function() {
+                    statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
+                    // Zet beide bestanden terug naar het beginpunt
+                    verhaalAudio.currentTime = 0;
+                    liedjeAudio.currentTime = 0;
+                    isVerhaalPlaying = false;
+                };
+                synth.speak(utterance);
+            }
         };
 
         // --- Event Listener voor de knop ---
@@ -102,9 +149,9 @@
         
         // Zorg ervoor dat de pauze-status goed ingesteld is als een bestand vanzelf pauzeert (bijv. door een error)
         verhaalAudio.onpause = liedjeAudio.onpause = function() {
-            if (!verhaalAudio.ended && !liedjeAudio.ended && isPlaying) {
+            if (!verhaalAudio.ended && !liedjeAudio.ended && !synth.speaking && isPlaying) {
                  // Dit kan gebeuren bij handmatige pauze
-            } else if (!verhaalAudio.ended && !liedjeAudio.ended) {
+            } else if (!verhaalAudio.ended && !liedjeAudio.ended && isPlaying) {
                 // Handmatig gepauzeerd door knop of andere gebeurtenis
                 isPlaying = false;
                 playPauseBtn.textContent = '▶ Hervat';
