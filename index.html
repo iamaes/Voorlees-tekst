@@ -3,104 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verhaal zwamzakken</title>
+    <title>Verhaal Zwamzakken</title>
     <style>
-        /* Optionele CSS om de knop er netter uit te laten zien */
+        /* CSS voor de knop */
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 50px;
-            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: sans-serif;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
+
+        #playPauseButton {
+            padding: 30px 60px; /* Maakt de knop groot */
+            font-size: 24px;
+            font-weight: bold;
             cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
             border: none;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 15px;
+            background-color: #4CAF50; /* Groene kleur */
+            color: white;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 9px #999;
         }
-        button:hover {
+
+        #playPauseButton:hover {
             background-color: #45a049;
+        }
+
+        #playPauseButton:active {
+            background-color: #3e8e41;
+            box-shadow: 0 5px #666;
+            transform: translateY(4px);
         }
     </style>
 </head>
 <body>
 
-    <h1>Verhaal Zwamzakken</h1>
-    
-    <button id="playPauseButton">Speel Af / Pauzeer</button>
+    <button id="playPauseButton">▶️ Start Verhaal</button>
 
-    <audio id="audioStory" preload="auto">
-        <source src="Voorleestekst.mp3" type="audio/mpeg">
-        Uw browser ondersteunt het audio-element niet.
-    </audio>
-
-    <audio id="audioSong" preload="auto">
-        <source src="Zwamzakken_lied.mp3" type="audio/mpeg">
-        Uw browser ondersteunt het audio-element niet.
-    </audio>
-    
-    <audio id="audioLast" preload="auto">
-        <source src="laatste.mp3" type="audio/mpeg">
-        Uw browser ondersteunt het audio-element niet.
-    </audio>
+    <audio id="audio1" src="Voorleestekst2.mp3"></audio>
+    <audio id="audio2" src="Zwamzakken_lied.mp3"></audio>
+    <audio id="audio3" src="laatste.mp3"></audio>
 
     <script>
-        // Pak de HTML-elementen
-        const story = document.getElementById('audioStory');
-        const song = document.getElementById('audioSong');
-        // **NIEUW:** Pak het laatste audio-element
-        const last = document.getElementById('audioLast'); 
-        const playPauseButton = document.getElementById('playPauseButton');
+        // Lijst van de ID's van de audio-elementen in de gewenste volgorde
+        const audioIDs = ['audio1', 'audio2', 'audio3'];
+        let currentAudioIndex = 0;
+        let isPlaying = false;
 
-        // Houd bij welk audio-element momenteel actief is
-        let currentAudio = story;
+        // Haal de elementen op
+        const button = document.getElementById('playPauseButton');
+        const audioElements = audioIDs.map(id => document.getElementById(id));
 
-        // --- Event Listener voor de Speel/Pauze-knop ---
-        playPauseButton.addEventListener('click', function() {
-            // Controleer of de huidige audio is gepauzeerd
-            if (currentAudio.paused) {
-                // Speel af
+        // Functie om het volgende audiobestand af te spelen
+        function playNext() {
+            // Controleer of er nog audiobestanden in de lijst zijn
+            if (currentAudioIndex < audioIDs.length) {
+                const currentAudio = audioElements[currentAudioIndex];
+                
+                // Voeg een 'ended' event listener toe om door te gaan naar de volgende wanneer deze klaar is
+                currentAudio.onended = () => {
+                    currentAudioIndex++;
+                    playNext(); // Speel de volgende af
+                };
+                
+                // Speel het huidige bestand af
                 currentAudio.play().catch(error => {
-                    console.error("Fout bij afspelen:", error);
-                    alert("Kan niet automatisch afspelen. Probeer handmatig af te spelen.");
+                    console.error("Fout bij het afspelen van audio:", error);
+                    // Probeer de volgende af te spelen als er een fout is
+                    currentAudioIndex++;
+                    playNext();
                 });
+                
+                // Update de knoptekst
+                button.textContent = '⏸️ Pauzeer';
+
             } else {
-                // Pauzeer
-                currentAudio.pause();
+                // Alle bestanden zijn afgespeeld
+                isPlaying = false;
+                currentAudioIndex = 0; // Reset voor herhaling
+                button.textContent = '▶️ Herstart Verhaal';
+                // Haal de 'onended' listeners weg om te voorkomen dat ze opnieuw getriggerd worden bij herstart
+                audioElements.forEach(audio => audio.onended = null);
+            }
+        }
+
+        // Functie om af te spelen/pauzeren
+        function togglePlayPause() {
+            if (isPlaying) {
+                // Pauzeer het huidige bestand
+                audioElements[currentAudioIndex].pause();
+                isPlaying = false;
+                button.textContent = '▶️ Hervat';
+            } else {
+                // Start of hervat het afspelen
+                isPlaying = true;
+                playNext();
+            }
+        }
+
+        // Luister naar de klik op de knop
+        button.addEventListener('click', togglePlayPause);
+
+        // Zorg ervoor dat de audiobestanden correct kunnen herstarten als er middenin gepauzeerd wordt
+        // en de gebruiker op Herstart drukt.
+        button.addEventListener('click', () => {
+            if (currentAudioIndex === 0 && !isPlaying) {
+                // Als de gebruiker klikt om te starten nadat alles is afgespeeld, 
+                // spoel alle audio terug naar het begin.
+                audioElements.forEach(audio => audio.currentTime = 0);
             }
         });
-
-        // --- Event Listener voor het automatisch overgaan naar het liedje (na verhaal) ---
-        story.addEventListener('ended', function() {
-            story.pause(); 
-            // Stel de huidige audio in op het liedje
-            currentAudio = song;
-            // Speel het liedje af
-            currentAudio.play().catch(error => {
-                console.error("Fout bij automatisch afspelen van lied:", error);
-                alert("Het lied kon niet automatisch starten.");
-            });
-        });
-
-        // --- **NIEUW:** Event Listener voor het automatisch overgaan naar "laatste.mp3" (na liedje) ---
-        song.addEventListener('ended', function() {
-            song.pause(); 
-            // Stel de huidige audio in op "laatste.mp3"
-            currentAudio = last;
-            // Speel "laatste.mp3" af
-            currentAudio.play().catch(error => {
-                console.error("Fout bij automatisch afspelen van laatste bestand:", error);
-                alert("Het laatste audiobestand kon niet automatisch starten.");
-            });
-        });
         
-        // TIP: Als je op de knop drukt tijdens het laatste.mp3, pauzeert het.
-        // Als je het verhaal opnieuw wilt starten, moet je de pagina herladen.
-
     </script>
 
 </body>
