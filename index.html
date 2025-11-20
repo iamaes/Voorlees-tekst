@@ -3,165 +3,255 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Voorlees-site — De Zwamzakken</title>
+  <title>Voorlees — De Zwamzakken</title>
   <style>
-    :root{--bg:#f7fbf7;--card:#ffffff;--accent:#2a9d8f;--accent-2:#264653;--muted:#7a7a7a}
+    :root{--bg:#f7fbf7;--card:#ffffff;--accent:#2a9d8f;--accent-2:#264653}
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
     body{background:linear-gradient(180deg,#eaf6f2,white);display:flex;align-items:center;justify-content:center;padding:20px}
-    .card{width:980px;max-width:100%;background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px}
-    h1{margin:0;font-size:20px;color:var(--accent-2)}
-    .controls{display:flex;gap:12px;align-items:center;margin-top:12px}
-    button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;box-shadow:0 6px 18px rgba(42,157,143,.18)}
-    button.secondary{background:#eee;color:var(--accent-2);box-shadow:none}
-    button.big{padding:22px 26px;font-size:28px;border-radius:20px}
-    .story{line-height:1.9;font-size:19px;color:#222;max-height:60vh;overflow:auto;padding:16px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb)}
-    .big-buttons{display:flex;gap:8px}
+    .card{width:640px;max-width:100%;background:var(--card);border-radius:14px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px;text-align:center}
+    h1{margin:0;font-size:18px;color:var(--accent-2)}
+    .controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:18px}
+    button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;cursor:pointer}
+    button.secondary{background:#eee;color:var(--accent-2)}
+    button.big{padding:18px 22px;font-size:24px;border-radius:18px}
+    .note{margin-top:12px;color:#555;font-size:13px}
   </style>
 </head>
-
 <body>
   <div class="card">
-    <header>
-      <h1>De Zwamzakken — voorleesmodus</h1>
-    </header>
+    <h1>De Zwamzakken — voorleesmodus (audio-only)</h1>
 
     <div class="controls">
-      <div class="big-buttons">
-        <button id="playPause" class="big">▶︎</button>
-      </div>
-      <button id="stop" class="secondary small">Stop</button>
+      <button id="playPause" class="big">▶︎</button>
+      <button id="stop" class="secondary">Stop</button>
     </div>
 
-    <main>
-      <div id="story" class="story"></div>
-    </main>
+    <div class="note">
+      Druk op ▶︎ om te starten. De tekst wordt niet weergegeven — alleen audio.
+    </div>
   </div>
 
-  <!-- Voorlees-audio -->
-  <audio id="voiceAudio" src="De Zwamzakken_artevelde.mp3"></audio>
+  <!-- Audiobestanden: vervang src als jouw bestandsnamen anders zijn -->
+  <audio id="voiceAudio" src="De Zwamzakken_artevelde.mp3" preload="auto"></audio>
+  <audio id="song" src="Zwamzakken_lied.mp3" preload="auto"></audio>
+  <audio id="bell" src="bell.mp3" preload="auto"></audio>
 
-  <!-- Lied -->
-  <audio id="song" src="Zwamzakken_lied.mp3"></audio>
 <script>
-  // De volledige tekst, inclusief belletjes
-  let storyTextRaw = `
-Lieve Chaya, zegt Paul de Mol voorzichtig…
-Jij zingt over liefde, mooi en lief…
-Jij bent echt een hartendief.
-Chaya champi moet heel erg blozen.
-(belletje, zodat kind weet dat hij de pagina moet omslaan)
+  // --- instellingen: seconden waarop bellen en de speciale trigger (28s) ---
+  const bellTimes = [14, 21, 27]; // seconden
+  const specialTriggerTime = 28; // in seconden
 
-Vanavond, zegt Paul, geef ik een feestje bij de grote blauwe vijver…
-(belletje, zodat kind weet dat hij de pagina moet omslaan)
-
-…op de oude mooie boerderij.
-En het wordt reuzeleuk met jou erbij!
-(belletje, zodat kind weet dat hij de pagina moet omslaan)
-
-Het liedje van de zwamzakken:
-liedje : "Zwamzakken_lied.mp3"
-
-Wij zijn de Zwamzakken, hopla hopla ho!
-Wij spelen muziek, daar word je blij van zo!
-Toet-toet, pling-pling, ratatam-tam-tam,
-Sterk van planten, ja dat kan!
-
-Charley slaat, op z’n trommel zo hard,
-Oekie tokkelt, op haar gitaar zo zacht,
-Chaya blaast, op haar trompetje,
-Plantenkracht, dat is een pretje!
-
-Wij zijn de Zwamzakken, hopla hopla ho!
-Wij spelen muziek, daar word je blij van zo!
-Toet-toet, pling-pling, ratatam-tam-tam,
-Sterk van planten, ja dat kan!
-
-Einde
-
-Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken met jouw ouders!
-`;
-
-  // Toon tekst zonder belletjes in beeld
-  document.getElementById('story').textContent =
-    storyTextRaw.replace(/\(belletje[^)]+\)/g, '');
-
+  // --- elementen ---
   const voice = document.getElementById('voiceAudio');
-  const song = document.getElementById('song');
-  const bell = document.getElementById('bell');
+  const song  = document.getElementById('song');
+  const bell  = document.getElementById('bell');
   const playBtn = document.getElementById('playPause');
   const stopBtn = document.getElementById('stop');
 
+  // --- status ---
+  let scheduledTimeouts = []; // houd actieve timeouts bij
   let specialTriggered = false;
-  let bellPlayed = {14:false,21:false,27:false};
 
-  function updateButton(){
-    playBtn.textContent = (voice.paused && song.paused) ? '▶︎' : '⏸︎';
+  function clearScheduled(){
+    scheduledTimeouts.forEach(id => clearTimeout(id));
+    scheduledTimeouts = [];
   }
 
-  function checkTriggers(){
+  // (Her)plan alle toekomstige triggers op basis van de huidige voice.currentTime
+  function scheduleTriggers(){
+    clearScheduled();
+
     const now = voice.currentTime;
 
-    // --- BELTJES OP 14, 21 EN 27 SEC ---
-    [14,21,27].forEach(t=>{
-      if(!bellPlayed[t] && now >= t){
-        bellPlayed[t] = true;
-        bell.currentTime = 0;
-        bell.play();
+    // Plan belletjes
+    bellTimes.forEach(t => {
+      if (now < t){ // alleen als nog niet gepasseerd
+        const delay = (t - now) * 1000;
+        const id = setTimeout(()=> {
+          // alleen afspelen als voice nog speelt (niet gepauzeerd/stopped)
+          if (!voice.paused && !voice.ended){
+            try {
+              bell.currentTime = 0;
+            } catch(e) {}
+            bell.play().catch(()=>{/* autoplay- / browser-policy fallback */});
+          }
+        }, delay);
+        scheduledTimeouts.push(id);
       }
     });
 
-    // --- NA 28 SEC: PAUZE → STEM → LIED ---
-    if(!specialTriggered && now >= 28){
-      specialTriggered = true;
-
-      voice.pause();
-
-      let u = new SpeechSynthesisUtterance(
-        "Luister nu naar het liedje van de zwamzakken."
-      );
-      u.lang = "nl-NL";
-      u.rate = 1;
-
-      u.onend = ()=>{
-        song.currentTime = 0;
-        song.play();
-        updateButton();
-      };
-
-      speechSynthesis.speak(u);
+    // Plan special trigger (pauze → synth → lied)
+    if (!specialTriggered && now < specialTriggerTime){
+      const delay = (specialTriggerTime - now) * 1000;
+      const id = setTimeout(()=> {
+        if (!voice.paused && !voice.ended){
+          triggerSpecial(); // pauze + synth + lied
+        }
+      }, delay);
+      scheduledTimeouts.push(id);
     }
+
+    // Als we bij het plannen al voorbij de trigger zitten (bijv. user seekt), trigger direct
+    if (!specialTriggered && now >= specialTriggerTime){
+      // directe trigger (microtask zodat alles netjes wordt afgehandeld)
+      setTimeout(() => {
+        if (!specialTriggered) triggerSpecial();
+      }, 0);
+    }
+
+    // Belletjes die je al voorbij bent: geen actie (worden niet meer afgespeeld)
   }
 
-  playBtn.onclick = ()=>{
-    if(voice.paused && song.paused){
-      specialTriggered = false;
-      bellPlayed = {14:false,21:false,27:false};
-      voice.currentTime = 0;
-      voice.play();
+  // Actie bij special trigger: pauzeer voice, spreek, start lied bij einde
+  function triggerSpecial(){
+    specialTriggered = true;
+    clearScheduled();
+
+    // Pauzeer voice
+    try { voice.pause(); } catch(e){}
+
+    // Maak en spreek de tekst (nl)
+    const u = new SpeechSynthesisUtterance("Luister nu naar het liedje van de zwamzakken.");
+    u.lang = "nl-NL";
+    u.rate = 1;
+
+    u.onend = () => {
+      // start lied
+      try { song.currentTime = 0; } catch(e){}
+      song.play().catch(()=>{/* browser autoplay policy might block if not user gesture */});
+      updateButton();
+    };
+
+    // In sommige browser-omgevingen is speechSynthesis een user-gesture afhankelijk;
+    // deze flow werkt omdat de whole sequence is gestart vanaf een play-knop (user gesture).
+    try {
+      speechSynthesis.cancel(); // stop eventueel lopende spraak
+      speechSynthesis.speak(u);
+    } catch(e){
+      // Als speechSynthesis niet werkt, start direct het lied
+      try { song.currentTime = 0; song.play(); } catch(e){}
+      updateButton();
+    }
+
+    updateButton();
+  }
+
+  // Reset naar begin (stop)
+  function doStop(){
+    // stop audios
+    try { voice.pause(); voice.currentTime = 0; } catch(e){}
+    try { song.pause(); song.currentTime = 0; } catch(e){}
+    try { bell.pause(); bell.currentTime = 0; } catch(e){}
+    // reset flags & clear timers
+    specialTriggered = false;
+    clearScheduled();
+    updateButton();
+  }
+
+  // Play / Pause toggle
+  function togglePlayPause(){
+    // Als beide stoppen en we willen starten: reset flags
+    if (voice.paused && song.paused){
+      // Start of hervatten van voice (we willen voice afspelen)
+      // Als voice zat te spelen en we herstarten, specialTriggered moet blijven wat het was
+      // maar voor een "nieuw" start vanaf 0: zet specialTriggered false
+      if (voice.currentTime === 0) specialTriggered = false;
+
+      // Play voice
+      voice.play().catch(err=>{
+        // sommige browsers vereisen expliciete user gesture; deze knop is een user gesture dus normaal OK
+        console.warn("voice.play() geweigerd:", err);
+      });
+
+      // plan triggers vanaf het huidige punt
+      scheduleTriggers();
     } else {
-      voice.pause();
-      song.pause();
+      // Pauzeren: pauzeer audios en clear timers
+      try { voice.pause(); } catch(e){}
+      try { song.pause(); } catch(e){}
+      clearScheduled();
     }
     updateButton();
-  };
+  }
 
-  stopBtn.onclick = ()=>{
-    voice.pause();
-    song.pause();
-    voice.currentTime = 0;
-    song.currentTime = 0;
-    specialTriggered = false;
-    bellPlayed = {14:false,21:false,27:false};
+  function updateButton(){
+    // Toon pauze als er iets speelt (voice of song)
+    const playing = (!voice.paused && !voice.ended) || (!song.paused && !song.ended);
+    playBtn.textContent = playing ? '⏸︎' : '▶︎';
+  }
+
+  // --- Event listeners ---
+
+  // Als de gebruiker klikt op play/pause
+  playBtn.addEventListener('click', ()=>{
+    togglePlayPause();
+  });
+
+  // Stopknop
+  stopBtn.addEventListener('click', ()=>{
+    doStop();
+  });
+
+  // Als de gebruiker seekt of audio wordt hervat door de browser, herplan triggers
+  voice.addEventListener('seeked', () => {
+    // als we hebben gesprongen voorbij special trigger en special nog niet gebeurd is, trigger direct
+    if (!specialTriggered && voice.currentTime >= specialTriggerTime){
+      triggerSpecial();
+      return;
+    }
+    if (!voice.paused && !voice.ended){
+      scheduleTriggers();
+    } else {
+      clearScheduled();
+    }
+  });
+
+  // Als de gebruiker klikt resume vanuit browser auto-pause etc.
+  voice.addEventListener('play', () => {
+    // Als we al voorbij special trigger en special nog niet gedaan → trigger
+    if (!specialTriggered && voice.currentTime >= specialTriggerTime){
+      triggerSpecial();
+      return;
+    }
+    if (!specialTriggered){
+      scheduleTriggers();
+    } else {
+      clearScheduled();
+    }
     updateButton();
-  };
+  });
 
-  voice.ontimeupdate = checkTriggers;
-  voice.onended = updateButton;
-  song.onended = updateButton;
+  voice.addEventListener('pause', () => {
+    // bij pauze cancel timers (we gaan herplannen bij play)
+    clearScheduled();
+    updateButton();
+  });
+
+  voice.addEventListener('ended', () => {
+    // In het onwaarschijnlijke geval dat het bestand tot het einde speelt zonder special,
+    // reset buttons.
+    updateButton();
+  });
+
+  // Als het lied eindigt: update knop (zodat ▶︎ weer verschijnt)
+  song.addEventListener('ended', updateButton);
+
+  // Zorg dat stop ook alles reset als gebruiker de pagina verlaat
+  window.addEventListener('beforeunload', () => {
+    clearScheduled();
+    try { speechSynthesis.cancel(); } catch(e){}
+  });
+
+  // Eerste button-status
+  updateButton();
+
+  // --- Opmerking voor debug / testen ---
+  // Als je wilt testen zonder het volledige mp3, kun je tijdelijk de tijden verlagen
+  // (bv. bellTimes = [2,4,6]; specialTriggerTime = 8) — vergeet niet terug te zetten!
 </script>
-
 </body>
 </html>
+
 
 
 
