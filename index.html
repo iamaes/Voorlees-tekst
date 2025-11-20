@@ -1,3 +1,47 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Voorlees-site — De Zwamzakken</title>
+  <style>
+    :root{--bg:#f7fbf7;--card:#ffffff;--accent:#2a9d8f;--accent-2:#264653;--muted:#7a7a7a}
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{background:linear-gradient(180deg,#eaf6f2,white);display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{width:980px;max-width:100%;background:var(--card);border-radius:18px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px}
+    h1{margin:0;font-size:20px;color:var(--accent-2)}
+    .controls{display:flex;gap:12px;align-items:center;margin-top:12px}
+    button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;box-shadow:0 6px 18px rgba(42,157,143,.18)}
+    button.secondary{background:#eee;color:var(--accent-2);box-shadow:none}
+    button.big{padding:22px 26px;font-size:28px;border-radius:20px}
+    .story{line-height:1.9;font-size:19px;color:#222;max-height:60vh;overflow:auto;padding:16px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfffb)}
+    .big-buttons{display:flex;gap:8px}
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <header>
+      <h1>De Zwamzakken — voorleesmodus</h1>
+    </header>
+
+    <div class="controls">
+      <div class="big-buttons">
+        <button id="playPause" class="big">▶︎</button>
+      </div>
+      <button id="stop" class="secondary small">Stop</button>
+    </div>
+
+    <main>
+      <div id="story" class="story"></div>
+    </main>
+  </div>
+
+  <!-- Voorlees-audio -->
+  <audio id="voiceAudio" src="De Zwamzakken_artevelde.mp3"></audio>
+
+  <!-- Lied -->
+  <audio id="song" src="Zwamzakken_lied.mp3"></audio>
 <script>
   // De volledige tekst, inclusief belletjes
   let storyTextRaw = `
@@ -115,6 +159,10 @@ Hierna kan je nog een spelletje spelen, een puzzel maken en een receptje maken m
   voice.onended = updateButton;
   song.onended = updateButton;
 </script>
+
+</body>
+</html>
+
 
 
 
