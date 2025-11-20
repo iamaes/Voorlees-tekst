@@ -23,8 +23,7 @@
 
     <audio id="verhaal-audio" src="De Zwamzakken_artevelde.mp3"></audio>
     <audio id="liedje-audio" src="Zwamzakken_lied.mp3"></audio>
-
-    <button id="play-pause-btn">▶ Afspelen</button>
+    <audio id="bell-audio" src="bell.mp3"></audio> <button id="play-pause-btn">▶ Afspelen</button>
 
     <p id="status-text">Klaar om te starten.</p>
 
@@ -32,18 +31,91 @@
         // Selecteer de audio-elementen en de knop
         const verhaalAudio = document.getElementById('verhaal-audio');
         const liedjeAudio = document.getElementById('liedje-audio');
+        const bellAudio = document.getElementById('bell-audio');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const statusText = document.getElementById('status-text');
 
-        let isPlaying = false; // Houdt de huidige afspeelstatus bij
-        let isVerhaalPlaying = false; // Houdt bij of het verhaal bezig is
-        
+        let isPlaying = false;
+        let bellTriggered = {
+            '14': false,
+            '20': false,
+            'end': false
+        };
+
+        // --- Hulpfunctie om de bel te laten afspelen en het verhaal te hervatten ---
+        function playBellAndContinue() {
+            verhaalAudio.pause();
+            bellAudio.currentTime = 0; // Zorg ervoor dat de bel altijd vanaf het begin speelt
+            bellAudio.play();
+            statusText.textContent = '🎶 Bel speelt af... Verhaal gepauzeerd.';
+        }
+
+        // --- Wanneer de bel klaar is met spelen, hervat het verhaal (als het niet het einde is) ---
+        bellAudio.onended = function() {
+            if (isPlaying && !bellTriggered.end) {
+                verhaalAudio.play();
+                statusText.textContent = 'Verhaal hervat...';
+            } else if (bellTriggered.end) {
+                // De bel na het einde van het verhaal is klaar, start het liedje
+                liedjeAudio.play();
+                statusText.textContent = '🎧 Liedje speelt af...';
+            }
+        };
+
+        // --- Belangrijkste Logica: Controleer de tijd van het verhaal ---
+        verhaalAudio.ontimeupdate = function() {
+            const currentTime = Math.floor(verhaalAudio.currentTime);
+
+            // Trigger op 14 seconden
+            if (currentTime >= 14 && !bellTriggered['14'] && !verhaalAudio.paused) {
+                bellTriggered['14'] = true;
+                playBellAndContinue();
+                return; // Stop de timeupdate event voor nu
+            }
+
+            // Trigger op 20 seconden
+            if (currentTime >= 20 && !bellTriggered['20'] && !verhaalAudio.paused) {
+                bellTriggered['20'] = true;
+                playBellAndContinue();
+                return; // Stop de timeupdate event voor nu
+            }
+        };
+
+
+        // --- Logica wanneer het verhaal klaar is (einde) ---
+        verhaalAudio.onended = function() {
+            if (isPlaying) {
+                if (!bellTriggered.end) {
+                    // Start de laatste bel
+                    bellTriggered.end = true;
+                    bellAudio.currentTime = 0;
+                    bellAudio.play();
+                    statusText.textContent = '🎶 Verhaal klaar. Laatste bel speelt af...';
+                }
+                // Het liedje wordt gestart in bellAudio.onended na de laatste bel
+            }
+        };
+
+        // --- Logica wanneer het liedje ook is afgelopen ---
+        liedjeAudio.onended = function() {
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ Opnieuw Afspelen';
+            statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
+            
+            // Reset alle audio en triggers
+            verhaalAudio.currentTime = 0;
+            liedjeAudio.currentTime = 0;
+            bellTriggered = { '14': false, '20': false, 'end': false };
+        };
+
+
         // --- Functie om de afspeelsequentie te starten of te pauzeren ---
         function togglePlayPause() {
             if (isPlaying) {
                 // Pauzeer alles
                 verhaalAudio.pause();
                 liedjeAudio.pause();
+                bellAudio.pause();
                 isPlaying = false;
                 playPauseBtn.textContent = '▶ Afspelen';
                 statusText.textContent = 'Gepauzeerd.';
@@ -51,71 +123,35 @@
                 // Start of hervat het afspelen
                 isPlaying = true;
                 playPauseBtn.textContent = '⏸ Pauze';
-
+                
+                // Bepaal waar we moeten hervatten
                 if (verhaalAudio.currentTime > 0 && !verhaalAudio.ended) {
-                    // Hervat het verhaal
                     verhaalAudio.play();
-                    statusText.textContent = 'Verhaal wordt hervat...';
-                    isVerhaalPlaying = true;
+                    statusText.textContent = 'Verhaal hervat...';
                 } else if (liedjeAudio.currentTime > 0 && !liedjeAudio.ended) {
-                    // Hervat het liedje
                     liedjeAudio.play();
-                    statusText.textContent = 'Liedje wordt hervat...';
-                    isVerhaalPlaying = false;
+                    statusText.textContent = 'Liedje hervat...';
+                } else if (bellAudio.currentTime > 0 && !bellAudio.ended) {
+                    // Als we gepauzeerd hebben terwijl de bel speelde, hervat de bel
+                    bellAudio.play();
+                    statusText.textContent = 'Bel hervat...';
                 } else {
-                    // Start vanaf het begin (reset liedje voor de zekerheid)
-                    liedjeAudio.currentTime = 0;
-                    
-                    // Start met het eerste bestand (het verhaal)
+                    // Start vanaf het begin
+                    liedjeAudio.currentTime = 0; // Reset liedje voor de zekerheid
                     verhaalAudio.play();
-                    statusText.textContent = 'Verhaal wordt afgespeeld...';
-                    isVerhaalPlaying = true;
+                    statusText.textContent = 'Verhaal start...';
+                    // Reset triggers voor nieuwe start
+                    bellTriggered = { '14': false, '20': false, 'end': false };
                 }
             }
         }
 
-        // --- Logica om het verhaal te laten overgaan in het liedje ---
-        verhaalAudio.onended = function() {
-            if (isPlaying) {
-                // Het verhaal is afgelopen, begin het liedje
-                isVerhaalPlaying = false;
-                liedjeAudio.play();
-                statusText.textContent = 'Liedje wordt afgespeeld...';
-            }
-        };
-
-        // --- Logica wanneer het liedje ook is afgelopen ---
-        liedjeAudio.onended = function() {
-            // Alles is afgelopen
-            isPlaying = false;
-            playPauseBtn.textContent = '▶ Opnieuw Afspelen';
-            statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
-            
-            // Zet beide bestanden terug naar het beginpunt
-            verhaalAudio.currentTime = 0;
-            liedjeAudio.currentTime = 0;
-            isVerhaalPlaying = false;
-        };
-
         // --- Event Listener voor de knop ---
         playPauseBtn.addEventListener('click', togglePlayPause);
-        
-        // Zorg ervoor dat de pauze-status goed ingesteld is als een bestand vanzelf pauzeert (bijv. door een error)
-        verhaalAudio.onpause = liedjeAudio.onpause = function() {
-            if (!verhaalAudio.ended && !liedjeAudio.ended && isPlaying) {
-                 // Dit kan gebeuren bij handmatige pauze
-            } else if (!verhaalAudio.ended && !liedjeAudio.ended) {
-                // Handmatig gepauzeerd door knop of andere gebeurtenis
-                isPlaying = false;
-                playPauseBtn.textContent = '▶ Hervat';
-            }
-        };
-
     </script>
 
 </body>
 </html>
-
 
 
 
