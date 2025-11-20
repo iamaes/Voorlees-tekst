@@ -1,14 +1,148 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Verhaal-zwamzakken</title>
+    <style>
+        /* Optionele CSS voor een betere look */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        #play-pause-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
 <body>
 
-    <h1>Verhaal-zwamzakken: Test Bel</h1>
+    <h1>Verhaal-zwamzakken</h1>
 
-    <audio id="bell-audio-test" src="bell.mp3" controls></audio>
-    
-    <p>Als je op de afspeelknop hierboven klikt en de bel hoort, dan is het bestand correct geladen.</p>
+    <audio id="verhaal-audio" src="De Zwamzakken_artevelde.mp3"></audio>
+    <audio id="liedje-audio" src="Zwamzakken_lied.mp3"></audio>
+    <audio id="bell-audio" src="bell.mp3" muted></audio> <button id="play-pause-btn">▶ Afspelen</button>
+
+    <p id="status-text">Klaar om te starten.</p>
+
+    <script>
+        // Selecteer de audio-elementen en de knop
+        const verhaalAudio = document.getElementById('verhaal-audio');
+        const liedjeAudio = document.getElementById('liedje-audio');
+        const bellAudio = document.getElementById('bell-audio');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const statusText = document.getElementById('status-text');
+
+        let isPlaying = false;
+        
+        // De gewenste momenten voor de bel (in seconden). Let op: nu 14, 21, 27.
+        const bellTimes = [14, 21, 27]; 
+        // Een object om bij te houden welke momenten al geactiveerd zijn om dubbele belletjes te voorkomen.
+        let bellTriggered = {
+            '14': false,
+            '21': false,
+            '27': false
+        };
+        
+        // --- Functie om de bel af te spelen ---
+        function playBell() {
+            // Pauzeer eerst voor het geval het nog speelt, reset dan naar het begin
+            bellAudio.pause();
+            bellAudio.currentTime = 0; 
+            
+            // Probeer af te spelen met een korte vertraging (setTimeout)
+            setTimeout(() => {
+                bellAudio.play().catch(error => {
+                    // Deze catch-functie vangt fouten op zoals browserbeperkingen.
+                    console.error("Fout bij afspelen van de bel: ", error);
+                    statusText.textContent = '❌ Fout bij bel: Browser blokkeert wellicht gelijktijdige audio.';
+                });
+            }, 50); // 50 milliseconden vertraging
+        }
+
+        // --- Belangrijkste Logica: Controleer de tijd van het verhaal ---
+        verhaalAudio.ontimeupdate = function() {
+            if (!isPlaying || verhaalAudio.paused) return; // Doe niets als er niet wordt afgespeeld
+            
+            // Rond de tijd af naar de dichtstbijzijnde seconde om nauwkeurige triggers te garanderen
+            const currentTime = Math.round(verhaalAudio.currentTime); 
+
+            // Controleer elke gewenste tijd
+            bellTimes.forEach(time => {
+                const timeKey = time.toString();
+                // Als de tijd bereikt is EN de bel nog NIET is afgespeeld voor dit moment
+                if (currentTime === time && !bellTriggered[timeKey]) {
+                    bellTriggered[timeKey] = true; // Markeer als afgespeeld
+                    playBell();
+                    statusText.textContent = `Verhaal speelt... Bel getriggerd op ${time} seconden.`;
+                }
+            });
+        };
+
+
+        // --- Logica wanneer het verhaal klaar is (einde) ---
+        verhaalAudio.onended = function() {
+            if (isPlaying) {
+                // Verhaal is afgelopen, start het liedje
+                liedjeAudio.play();
+                statusText.textContent = '🎧 Verhaal afgelopen. Liedje speelt af...';
+            }
+        };
+
+        // --- Logica wanneer het liedje ook is afgelopen ---
+        liedjeAudio.onended = function() {
+            // Alles is afgelopen
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ Opnieuw Afspelen';
+            statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
+            
+            // Reset alle audio en triggers
+            verhaalAudio.currentTime = 0;
+            liedjeAudio.currentTime = 0;
+            bellAudio.pause(); // Stop de bel
+            // Reset triggers
+            bellTriggered = { '14': false, '21': false, '27': false };
+        };
+
+
+        // --- Functie om de afspeelsequentie te starten of te pauzeren ---
+        function togglePlayPause() {
+            if (isPlaying) {
+                // Pauzeer alles
+                verhaalAudio.pause();
+                liedjeAudio.pause();
+                bellAudio.pause(); // Pauzeer ook de bel, voor het geval deze net speelt
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Afspelen';
+                statusText.textContent = 'Gepauzeerd.';
+            } else {
+                // Start of hervat het afspelen
+                isPlaying = true;
+                playPauseBtn.textContent = '⏸ Pauze';
+                
+                // Bepaal waar we moeten hervatten
+                if (liedjeAudio.currentTime > 0 && !liedjeAudio.ended) {
+                    liedjeAudio.play();
+                    statusText.textContent = 'Liedje hervat...';
+                } else {
+                    // Start of hervat het verhaal
+                    verhaalAudio.play();
+                    statusText.textContent = 'Verhaal speelt...';
+                    
+                    // Bij een nieuwe start, reset de triggers
+                    if (verhaalAudio.currentTime === 0) {
+                        bellTriggered = { '14': false, '21': false, '27': false };
+                    }
+                }
+            }
+        }
+
+        // --- Event Listener voor de knop ---
+        playPauseBtn.addEventListener('click', togglePlayPause);
+    </script>
 
 </body>
-
-
-
-
+</html>
 
