@@ -1,254 +1,118 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Voorlees — De Zwamzakken</title>
-  <style>
-    :root{--bg:#f7fbf7;--card:#ffffff;--accent:#2a9d8f;--accent-2:#264653}
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{background:linear-gradient(180deg,#eaf6f2,white);display:flex;align-items:center;justify-content:center;padding:20px}
-    .card{width:640px;max-width:100%;background:var(--card);border-radius:14px;box-shadow:0 8px 30px rgba(30,30,30,.08);padding:18px;text-align:center}
-    h1{margin:0;font-size:18px;color:var(--accent-2)}
-    .controls{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:18px}
-    button{background:var(--accent);border:none;color:white;padding:12px 14px;border-radius:12px;font-size:16px;cursor:pointer}
-    button.secondary{background:#eee;color:var(--accent-2)}
-    button.big{padding:18px 22px;font-size:24px;border-radius:18px}
-    .note{margin-top:12px;color:#555;font-size:13px}
-  </style>
+    <meta charset="UTF-8">
+    <title>Verhaal-zwamzakken</title>
+    <style>
+        /* Optionele CSS voor een betere look */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        #play-pause-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h1>De Zwamzakken — voorleesmodus (audio-only)</h1>
 
-    <div class="controls">
-      <button id="playPause" class="big">▶︎</button>
-      <button id="stop" class="secondary">Stop</button>
-    </div>
+    <h1>Verhaal-zwamzakken</h1>
 
-    <div class="note">
-      Druk op ▶︎ om te starten. De tekst wordt niet weergegeven — alleen audio.
-    </div>
-  </div>
+    <audio id="verhaal-audio" src="De Zwamzakken_artevelde.mp3"></audio>
+    <audio id="liedje-audio" src="Zwamzakken_lied.mp3"></audio>
 
-  <!-- Audiobestanden: vervang src als jouw bestandsnamen anders zijn -->
-  <audio id="voiceAudio" src="De Zwamzakken_artevelde.mp3" preload="auto"></audio>
-  <audio id="song" src="Zwamzakken_lied.mp3" preload="auto"></audio>
-  <audio id="bell" src="bell.mp3" preload="auto"></audio>
+    <button id="play-pause-btn">▶ Afspelen</button>
 
-<script>
-  // --- instellingen: seconden waarop bellen en de speciale trigger (28s) ---
-  const bellTimes = [14, 21, 27]; // seconden
-  const specialTriggerTime = 28; // in seconden
+    <p id="status-text">Klaar om te starten.</p>
 
-  // --- elementen ---
-  const voice = document.getElementById('voiceAudio');
-  const song  = document.getElementById('song');
-  const bell  = document.getElementById('bell');
-  const playBtn = document.getElementById('playPause');
-  const stopBtn = document.getElementById('stop');
+    <script>
+        // Selecteer de audio-elementen en de knop
+        const verhaalAudio = document.getElementById('verhaal-audio');
+        const liedjeAudio = document.getElementById('liedje-audio');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const statusText = document.getElementById('status-text');
 
-  // --- status ---
-  let scheduledTimeouts = []; // houd actieve timeouts bij
-  let specialTriggered = false;
+        let isPlaying = false; // Houdt de huidige afspeelstatus bij
+        let isVerhaalPlaying = false; // Houdt bij of het verhaal bezig is
+        
+        // --- Functie om de afspeelsequentie te starten of te pauzeren ---
+        function togglePlayPause() {
+            if (isPlaying) {
+                // Pauzeer alles
+                verhaalAudio.pause();
+                liedjeAudio.pause();
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Afspelen';
+                statusText.textContent = 'Gepauzeerd.';
+            } else {
+                // Start of hervat het afspelen
+                isPlaying = true;
+                playPauseBtn.textContent = '⏸ Pauze';
 
-  function clearScheduled(){
-    scheduledTimeouts.forEach(id => clearTimeout(id));
-    scheduledTimeouts = [];
-  }
-
-  // (Her)plan alle toekomstige triggers op basis van de huidige voice.currentTime
-  function scheduleTriggers(){
-    clearScheduled();
-
-    const now = voice.currentTime;
-
-    // Plan belletjes
-    bellTimes.forEach(t => {
-      if (now < t){ // alleen als nog niet gepasseerd
-        const delay = (t - now) * 1000;
-        const id = setTimeout(()=> {
-          // alleen afspelen als voice nog speelt (niet gepauzeerd/stopped)
-          if (!voice.paused && !voice.ended){
-            try {
-              bell.currentTime = 0;
-            } catch(e) {}
-            bell.play().catch(()=>{/* autoplay- / browser-policy fallback */});
-          }
-        }, delay);
-        scheduledTimeouts.push(id);
-      }
-    });
-
-    // Plan special trigger (pauze → synth → lied)
-    if (!specialTriggered && now < specialTriggerTime){
-      const delay = (specialTriggerTime - now) * 1000;
-      const id = setTimeout(()=> {
-        if (!voice.paused && !voice.ended){
-          triggerSpecial(); // pauze + synth + lied
+                if (verhaalAudio.currentTime > 0 && !verhaalAudio.ended) {
+                    // Hervat het verhaal
+                    verhaalAudio.play();
+                    statusText.textContent = 'Verhaal wordt hervat...';
+                    isVerhaalPlaying = true;
+                } else if (liedjeAudio.currentTime > 0 && !liedjeAudio.ended) {
+                    // Hervat het liedje
+                    liedjeAudio.play();
+                    statusText.textContent = 'Liedje wordt hervat...';
+                    isVerhaalPlaying = false;
+                } else {
+                    // Start vanaf het begin (reset liedje voor de zekerheid)
+                    liedjeAudio.currentTime = 0;
+                    
+                    // Start met het eerste bestand (het verhaal)
+                    verhaalAudio.play();
+                    statusText.textContent = 'Verhaal wordt afgespeeld...';
+                    isVerhaalPlaying = true;
+                }
+            }
         }
-      }, delay);
-      scheduledTimeouts.push(id);
-    }
 
-    // Als we bij het plannen al voorbij de trigger zitten (bijv. user seekt), trigger direct
-    if (!specialTriggered && now >= specialTriggerTime){
-      // directe trigger (microtask zodat alles netjes wordt afgehandeld)
-      setTimeout(() => {
-        if (!specialTriggered) triggerSpecial();
-      }, 0);
-    }
+        // --- Logica om het verhaal te laten overgaan in het liedje ---
+        verhaalAudio.onended = function() {
+            if (isPlaying) {
+                // Het verhaal is afgelopen, begin het liedje
+                isVerhaalPlaying = false;
+                liedjeAudio.play();
+                statusText.textContent = 'Liedje wordt afgespeeld...';
+            }
+        };
 
-    // Belletjes die je al voorbij bent: geen actie (worden niet meer afgespeeld)
-  }
+        // --- Logica wanneer het liedje ook is afgelopen ---
+        liedjeAudio.onended = function() {
+            // Alles is afgelopen
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ Opnieuw Afspelen';
+            statusText.textContent = 'Alles is afgelopen. Druk op de knop om opnieuw te starten.';
+            
+            // Zet beide bestanden terug naar het beginpunt
+            verhaalAudio.currentTime = 0;
+            liedjeAudio.currentTime = 0;
+            isVerhaalPlaying = false;
+        };
 
-  // Actie bij special trigger: pauzeer voice, spreek, start lied bij einde
-  function triggerSpecial(){
-    specialTriggered = true;
-    clearScheduled();
+        // --- Event Listener voor de knop ---
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        
+        // Zorg ervoor dat de pauze-status goed ingesteld is als een bestand vanzelf pauzeert (bijv. door een error)
+        verhaalAudio.onpause = liedjeAudio.onpause = function() {
+            if (!verhaalAudio.ended && !liedjeAudio.ended && isPlaying) {
+                 // Dit kan gebeuren bij handmatige pauze
+            } else if (!verhaalAudio.ended && !liedjeAudio.ended) {
+                // Handmatig gepauzeerd door knop of andere gebeurtenis
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Hervat';
+            }
+        };
 
-    // Pauzeer voice
-    try { voice.pause(); } catch(e){}
+    </script>
 
-    // Maak en spreek de tekst (nl)
-    const u = new SpeechSynthesisUtterance("Luister nu naar het liedje van de zwamzakken.");
-    u.lang = "nl-NL";
-    u.rate = 1;
-
-    u.onend = () => {
-      // start lied
-      try { song.currentTime = 0; } catch(e){}
-      song.play().catch(()=>{/* browser autoplay policy might block if not user gesture */});
-      updateButton();
-    };
-
-    // In sommige browser-omgevingen is speechSynthesis een user-gesture afhankelijk;
-    // deze flow werkt omdat de whole sequence is gestart vanaf een play-knop (user gesture).
-    try {
-      speechSynthesis.cancel(); // stop eventueel lopende spraak
-      speechSynthesis.speak(u);
-    } catch(e){
-      // Als speechSynthesis niet werkt, start direct het lied
-      try { song.currentTime = 0; song.play(); } catch(e){}
-      updateButton();
-    }
-
-    updateButton();
-  }
-
-  // Reset naar begin (stop)
-  function doStop(){
-    // stop audios
-    try { voice.pause(); voice.currentTime = 0; } catch(e){}
-    try { song.pause(); song.currentTime = 0; } catch(e){}
-    try { bell.pause(); bell.currentTime = 0; } catch(e){}
-    // reset flags & clear timers
-    specialTriggered = false;
-    clearScheduled();
-    updateButton();
-  }
-
-  // Play / Pause toggle
-  function togglePlayPause(){
-    // Als beide stoppen en we willen starten: reset flags
-    if (voice.paused && song.paused){
-      // Start of hervatten van voice (we willen voice afspelen)
-      // Als voice zat te spelen en we herstarten, specialTriggered moet blijven wat het was
-      // maar voor een "nieuw" start vanaf 0: zet specialTriggered false
-      if (voice.currentTime === 0) specialTriggered = false;
-
-      // Play voice
-      voice.play().catch(err=>{
-        // sommige browsers vereisen expliciete user gesture; deze knop is een user gesture dus normaal OK
-        console.warn("voice.play() geweigerd:", err);
-      });
-
-      // plan triggers vanaf het huidige punt
-      scheduleTriggers();
-    } else {
-      // Pauzeren: pauzeer audios en clear timers
-      try { voice.pause(); } catch(e){}
-      try { song.pause(); } catch(e){}
-      clearScheduled();
-    }
-    updateButton();
-  }
-
-  function updateButton(){
-    // Toon pauze als er iets speelt (voice of song)
-    const playing = (!voice.paused && !voice.ended) || (!song.paused && !song.ended);
-    playBtn.textContent = playing ? '⏸︎' : '▶︎';
-  }
-
-  // --- Event listeners ---
-
-  // Als de gebruiker klikt op play/pause
-  playBtn.addEventListener('click', ()=>{
-    togglePlayPause();
-  });
-
-  // Stopknop
-  stopBtn.addEventListener('click', ()=>{
-    doStop();
-  });
-
-  // Als de gebruiker seekt of audio wordt hervat door de browser, herplan triggers
-  voice.addEventListener('seeked', () => {
-    // als we hebben gesprongen voorbij special trigger en special nog niet gebeurd is, trigger direct
-    if (!specialTriggered && voice.currentTime >= specialTriggerTime){
-      triggerSpecial();
-      return;
-    }
-    if (!voice.paused && !voice.ended){
-      scheduleTriggers();
-    } else {
-      clearScheduled();
-    }
-  });
-
-  // Als de gebruiker klikt resume vanuit browser auto-pause etc.
-  voice.addEventListener('play', () => {
-    // Als we al voorbij special trigger en special nog niet gedaan → trigger
-    if (!specialTriggered && voice.currentTime >= specialTriggerTime){
-      triggerSpecial();
-      return;
-    }
-    if (!specialTriggered){
-      scheduleTriggers();
-    } else {
-      clearScheduled();
-    }
-    updateButton();
-  });
-
-  voice.addEventListener('pause', () => {
-    // bij pauze cancel timers (we gaan herplannen bij play)
-    clearScheduled();
-    updateButton();
-  });
-
-  voice.addEventListener('ended', () => {
-    // In het onwaarschijnlijke geval dat het bestand tot het einde speelt zonder special,
-    // reset buttons.
-    updateButton();
-  });
-
-  // Als het lied eindigt: update knop (zodat ▶︎ weer verschijnt)
-  song.addEventListener('ended', updateButton);
-
-  // Zorg dat stop ook alles reset als gebruiker de pagina verlaat
-  window.addEventListener('beforeunload', () => {
-    clearScheduled();
-    try { speechSynthesis.cancel(); } catch(e){}
-  });
-
-  // Eerste button-status
-  updateButton();
-
-  // --- Opmerking voor debug / testen ---
-  // Als je wilt testen zonder het volledige mp3, kun je tijdelijk de tijden verlagen
-  // (bv. bellTimes = [2,4,6]; specialTriggerTime = 8) — vergeet niet terug te zetten!
-</script>
 </body>
 </html>
 
