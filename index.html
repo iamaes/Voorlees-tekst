@@ -35,6 +35,11 @@
         const playPauseBtn = document.getElementById('play-pause-btn');
         const statusText = document.getElementById('status-text');
         
+        // ** VOLUME-INSTELLING: Stel het volume in voor "Zwamzakken_lied.mp3" op 80% (0.8) **
+        liedjeAudio.volume = 0.8;
+        // Je kunt ook een standaard volume voor het verhaal instellen:
+        // verhaalAudio.volume = 1.0; 
+
         // --- Web Speech API elementen ---
         const synth = window.speechSynthesis;
         const eindBoodschap = "speel nog dit spelletje, maak een puzzel en toon het receptje aan je ouders";
@@ -162,4 +167,3 @@
 
 </body>
 </html>
-
